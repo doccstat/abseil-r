@@ -1,0 +1,5 @@
+Package: abseil
+Type: Package
+Title: Abseil C++ Header Files
+Description: Abseil C++ Header Files
+Version: 20230802.0
