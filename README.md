@@ -13,6 +13,14 @@ It can be used via the `LinkingTo:` field in the `DESCRIPTION` field of an R
 package --- and the R package infrastructure tools will then know how to set
 include flags correctly on all architectures supported by R.
 
+### Installation
+
+```r
+pak::pak("doccstat/abseil-r")
+
+devtools::install_github("doccstat/abseil-r")
+```
+
 ### Example
 
 ```cpp
