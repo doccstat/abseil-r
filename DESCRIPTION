@@ -1,9 +1,9 @@
 Package: abseil
 Type: Package
-Title: Abseil C++ Header Files
-Description: This package wraps the Abseil C++ library for use by R packages.
+Title: C++ Header Files from Abseil
+Description: Wraps the Abseil C++ library for use by R packages.
     This package is provided as is.
-Version: 20230802.0
+Version: 2023.8.2.0
 Authors@R: c(
     person("Xingchi", "Li", email = "anthony.li@stat.tamu.edu",
            role = c("aut", "cre", "cph"),
