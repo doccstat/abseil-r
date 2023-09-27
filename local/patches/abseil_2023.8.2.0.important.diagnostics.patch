@@ -1,0 +1,26 @@
+diff --git a/inst/include/absl/base/internal/invoke.h b/inst/include/absl/base/internal/invoke.h
+index 643c2a4..1fe5b73 100644
+--- a/inst/include/absl/base/internal/invoke.h
++++ b/inst/include/absl/base/internal/invoke.h
+@@ -106,7 +106,7 @@ struct MemFunAndRef : StrippedAccept<MemFunAndRef> {
+ // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101436 for similar example.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(11, 0)
+ #pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Warray-bounds"
++// #pragma GCC diagnostic ignored "-Warray-bounds"
+ #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+     return (std::forward<Obj>(obj).*
+diff --git a/inst/include/absl/container/internal/inlined_vector.h b/inst/include/absl/container/internal/inlined_vector.h
+index b2a602d..6e1dbab 100644
+--- a/inst/include/absl/container/internal/inlined_vector.h
++++ b/inst/include/absl/container/internal/inlined_vector.h
+@@ -39,7 +39,7 @@ namespace inlined_vector_internal {
+ // GCC does not deal very well with the below code
+ #if !defined(__clang__) && defined(__GNUC__)
+ #pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Warray-bounds"
++// #pragma GCC diagnostic ignored "-Warray-bounds"
+ #endif
+ 
+ template <typename A>
