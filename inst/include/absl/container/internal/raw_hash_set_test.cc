@@ -551,18 +551,18 @@ TEST(Table, EmptyFunctorOptimization) {
 
 // Ignore unreachable-code warning. Compiler thinks one branch of each ternary
 // conditional is unreachable.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
+// #if defined(__clang__)
+// #pragma clang diagnostic push
+// #pragma clang diagnostic ignored "-Wunreachable-code"
+// #endif
   constexpr size_t mock_size = std::is_empty<HashtablezInfoHandle>()
                                    ? sizeof(MockTableInfozDisabled)
                                    : sizeof(MockTable);
   constexpr size_t generation_size =
       SwisstableGenerationsEnabled() ? sizeof(GenerationData) : 0;
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
+// #if defined(__clang__)
+// #pragma clang diagnostic pop
+// #endif
 
   EXPECT_EQ(
       mock_size + generation_size,

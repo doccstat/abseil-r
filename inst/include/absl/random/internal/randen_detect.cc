@@ -108,10 +108,10 @@ namespace random_internal {
 
 // The default return at the end of the function might be unreachable depending
 // on the configuration. Ignore that warning.
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code-return"
-#endif
+// #if defined(__clang__)
+// #pragma clang diagnostic push
+// #pragma clang diagnostic ignored "-Wunreachable-code-return"
+// #endif
 
 // CPUSupportsRandenHwAes returns whether the CPU is a microarchitecture
 // which supports the crpyto/aes instructions or extensions necessary to use the
@@ -220,9 +220,9 @@ bool CPUSupportsRandenHwAes() {
   //   https://stackoverflow.com/questions/45637888/how-to-determine-armv8-features-at-runtime-on-ios
 }
 
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
+// #if defined(__clang__)
+// #pragma clang diagnostic pop
+// #endif
 
 }  // namespace random_internal
 ABSL_NAMESPACE_END

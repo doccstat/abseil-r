@@ -643,15 +643,15 @@ class InlinedVector {
       // point to uninitialized memory at this point, a warning should be
       // issued. But `pos` is actually only used to compute an array index to
       // write to.
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+// #endif
       return storage_.Insert(pos, CopyValueAdapter<A>(std::addressof(dealias)),
                              n);
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic pop
+// #endif
     } else {
       return const_cast<iterator>(pos);
     }
@@ -722,17 +722,17 @@ class InlinedVector {
     // point to uninitialized memory at this point, a warning should be
     // issued. But `pos` is actually only used to compute an array index to
     // write to.
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+// #endif
     return storage_.Insert(pos,
                            IteratorValueAdapter<A, MoveIterator<A>>(
                                MoveIterator<A>(std::addressof(dealias))),
                            1);
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic pop
+// #endif
   }
 
   // `InlinedVector::emplace_back(...)`

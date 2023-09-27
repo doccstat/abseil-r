@@ -136,15 +136,15 @@ template <class ReturnType, class F, class... P,
           absl::enable_if_t<!std::is_void<ReturnType>::value, int> = 0>
 ReturnType InvokeR(F&& f, P&&... args) {
   // GCC 12 has a false-positive -Wmaybe-uninitialized warning here.
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
+// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+// #endif
   return absl::base_internal::invoke(std::forward<F>(f),
                                      std::forward<P>(args)...);
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic pop
-#endif
+// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+// #pragma GCC diagnostic pop
+// #endif
 }
 
 //
@@ -214,14 +214,14 @@ T& ObjectInLocalStorage(TypeErasedState* const state) {
   // When `std::launder` or equivalent are not available, we rely on undefined
   // behavior, which works as intended on Abseil's officially supported
   // platforms as of Q2 2022.
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-#pragma GCC diagnostic push
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+// #pragma GCC diagnostic push
+// #endif
   return *reinterpret_cast<T*>(&state->storage);
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic pop
+// #endif
 
 #endif
 }
@@ -525,16 +525,16 @@ class CoreImpl {
 // against comparing their decayed form with nullptr.
 // Since this is template-heavy code, we prefer to disable these warnings
 // locally instead of adding yet another overload of this function.
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Waddress"
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#pragma GCC diagnostic push
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic ignored "-Wpragmas"
+// #pragma GCC diagnostic ignored "-Waddress"
+// #pragma GCC diagnostic ignored "-Wnonnull-compare"
+// #pragma GCC diagnostic push
+// #endif
     if (static_cast<RemoveCVRef<QualDecayedTRef>>(f) == nullptr) {
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+// #if !defined(__clang__) && defined(__GNUC__)
+// #pragma GCC diagnostic pop
+// #endif
       manager_ = EmptyManager;
       invoker_ = nullptr;
       return;

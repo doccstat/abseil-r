@@ -121,15 +121,15 @@ struct CordRepFlat : public CordRep {
     const size_t size = RoundUpForTag(len + kFlatOverhead);
     void* const raw_rep = ::operator new(size);
     // GCC 13 has a false-positive -Wstringop-overflow warning here.
-    #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wstringop-overflow"
-    #endif
+    // #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
+    // #pragma GCC diagnostic push
+    // #pragma GCC diagnostic ignored "-Wstringop-overflow"
+    // #endif
     CordRepFlat* rep = new (raw_rep) CordRepFlat();
     rep->tag = AllocatedSizeToTag(size);
-    #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
-    #pragma GCC diagnostic pop
-    #endif
+    // #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
+    // #pragma GCC diagnostic pop
+    // #endif
     return rep;
   }
 
