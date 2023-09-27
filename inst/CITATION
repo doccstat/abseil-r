@@ -1,0 +1,11 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "abseil: C++ Header Files from Abseil",
+  author   = c(
+    person("Xingchi", "Li", , "anthony.li@stat.tamu.edu", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0009-0006-2493-0853"))
+  ),
+  year     = 2023,
+  note     = sprintf("R package version %s", meta$Version),
+  url      = "https://github.com/doccstat/abseil-r"
+)
