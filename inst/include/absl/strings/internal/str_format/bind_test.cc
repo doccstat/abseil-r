@@ -46,8 +46,8 @@ TEST_F(FormatBindTest, BindSingle) {
   const int ia[] = { 10, 20, 30, 40};
   const FormatArgImpl args[] = {FormatArgImpl(ia[0]), FormatArgImpl(ia[1]),
                                 FormatArgImpl(ia[2]), FormatArgImpl(ia[3])};
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   const Expectation kExpect[] = {
     {__LINE__, "d",          2, &args[0], no, no, 2},
     {__LINE__, "4d",         2, &args[0],  4, no, 2},
@@ -78,7 +78,7 @@ TEST_F(FormatBindTest, BindSingle) {
     {__LINE__, "1$*6$d",     1},  // width position out of bounds
     {__LINE__, "1$.*6$d",    1},  // precision position out of bounds
   };
-#pragma GCC diagnostic pop
+// #pragma GCC diagnostic pop
   for (const Expectation &e : kExpect) {
     SCOPED_TRACE(e.line);
     SCOPED_TRACE(e.fmt);

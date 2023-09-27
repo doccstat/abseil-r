@@ -257,10 +257,10 @@ inline ABSL_TARGET_CRYPTO void SwapEndian(void*) {}
 
 #endif
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-pragmas"
-#endif
+// #ifdef __clang__
+// #pragma clang diagnostic push
+// #pragma clang diagnostic ignored "-Wunknown-pragmas"
+// #endif
 
 // At this point, all of the platform-specific features have been defined /
 // implemented.
@@ -515,9 +515,9 @@ void ABSL_TARGET_CRYPTO RandenHwAes::Generate(const void* keys_void,
   Vector128Store(inner, state);
 }
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+// #ifdef __clang__
+// #pragma clang diagnostic pop
+// #endif
 
 }  // namespace random_internal
 ABSL_NAMESPACE_END

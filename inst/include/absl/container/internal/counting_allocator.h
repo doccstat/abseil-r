@@ -81,14 +81,14 @@ class CountingAllocator {
   void destroy(U* p) {
     Allocator allocator;
     // Ignore GCC warning bug.
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
-#endif
+// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wuse-after-free"
+// #endif
     AllocatorTraits::destroy(allocator, p);
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic pop
-#endif
+// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+// #pragma GCC diagnostic pop
+// #endif
     if (instance_count_ != nullptr) {
       *instance_count_ -= 1;
     }
