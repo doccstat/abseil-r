@@ -1,21 +1,27 @@
-## abseil: Abseil Headers for R
 
-[![Last Commit](https://img.shields.io/github/last-commit/doccstat/abseil-r)](https://github.com/doccstat/abseil-r)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# abseil: Abseil Headers for R
+
+[![Last
+Commit](https://img.shields.io/github/last-commit/doccstat/abseil-r)](https://github.com/doccstat/abseil-r)
+[![r-universe](https://doccstat.r-universe.dev/badges/abseil)](https://doccstat.r-universe.dev)
 
 ### Synopsis
 
 This package provides [R](https://www.r-project.org) with access to
 [Abseil](https://abseil.io) header files.
 
-This package is a direct import of [Abseil](https://abseil.io) libraries.
+This package is a direct import of [Abseil](https://abseil.io)
+libraries.
 
-It can be used via the `LinkingTo:` field in the `DESCRIPTION` field of an R
-package --- and the R package infrastructure tools will then know how to set
-include flags correctly on all architectures supported by R.
+It can be used via the `LinkingTo:` field in the `DESCRIPTION` field of
+an R package — and the R package infrastructure tools will then know how
+to set include flags correctly on all architectures supported by R.
 
 ### Installation
 
-```r
+``` r
 pak::pak("doccstat/abseil-r")
 
 devtools::install_github("doccstat/abseil-r")
@@ -23,7 +29,7 @@ devtools::install_github("doccstat/abseil-r")
 
 ### Example
 
-```cpp
+``` cpp
 #include <Rcpp.h>
 // [[Rcpp::depends(abseil)]]
 #include "absl/strings/str_join.h"
