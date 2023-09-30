@@ -1,13 +1,9 @@
-## R CMD check results
+## Resubmission
+This is a resubmission. In this version I have:
 
-❯ checking CRAN incoming feasibility ... [4s/13s] NOTE
-  Maintainer: ‘Xingchi Li <anthony.li@stat.tamu.edu>’
-  
-  New submission
+* Written package names, software names and API (application
+  programming interface) names in single quotes in title and description.
 
-❯ checking installed package size ... NOTE
-    installed size is 13.7Mb
-    sub-directories of 1Mb or more:
-      include  13.6Mb
+* More clearly identified the copyright holders in the DESCRIPTION.
 
-0 errors ✔ | 0 warnings ✔ | 2 notes ✖
+* Added a .Rd file with example and info on the package.
