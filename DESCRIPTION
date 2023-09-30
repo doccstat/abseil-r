@@ -1,11 +1,18 @@
-Package: abseil
 Type: Package
-Title: C++ Header Files from Abseil
-Description: Wraps the Abseil C++ library for use by R packages.
-    This package is provided as is.
+Package: abseil
+Title: 'C++' Header Files from 'Abseil'
 Version: 2023.8.2.0
 Authors@R: c(
-    person("Xingchi", "Li", email = "anthony.li@stat.tamu.edu",
-           role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "0009-0006-2493-0853")))
+    person("Xingchi", "Li", , "anthony.li@stat.tamu.edu", role = c("ctb", "cre", "cph"),
+           comment = c(ORCID = "0009-0006-2493-0853")),
+    person("Abseil Team", role = c("aut", "cph"))
+  )
+Description: Wraps the 'Abseil' 'C++' library for use by R packages.
+    Original files are from <https://github.com/abseil/abseil-cpp>.
+    Patches are located at
+    <https://github.com/doccstat/abseil-r/tree/main/local/patches>.
 License: Apache License (>= 2)
+Suggests:
+    Rcpp
+Encoding: UTF-8
+RoxygenNote: 7.2.3

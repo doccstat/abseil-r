@@ -47,3 +47,15 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+.DS_Store
+src/*.o
+src/*.so
+src/*.dll
+inst/doc
+vignettes/*.aux
+.vscode/
+docs
+
+# abseil does not export any functions
+NAMESPACE
