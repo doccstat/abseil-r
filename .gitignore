@@ -56,6 +56,3 @@ inst/doc
 vignettes/*.aux
 .vscode/
 docs
-
-# abseil does not export any functions
-NAMESPACE
