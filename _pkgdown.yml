@@ -1,12 +1,20 @@
-url: https://abseil.xingchi.li
+url: https://abseil.xingchi.li/
 template:
   bootstrap: 5
   bslib:
-    base_font: {google: {family: "Source Sans Pro", wght: [400, 600], ital: [0, 1]}}
-    code_font: {google: "Source Code Pro"}
+    base_font:
+      google:
+        family: Source Sans Pro
+        wght:
+        - 400
+        - 600
+        ital:
+        - 0
+        - 1
+    code_font:
+      google: Source Code Pro
     font_scale: 1.2
-    primary: "#447099"
-
+    primary: '#447099'
 authors:
   Xingchi Li:
     href: https://www.xingchi.li

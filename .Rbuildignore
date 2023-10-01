@@ -2,3 +2,8 @@
 ^cran-comments\.md$
 ^local
 ^README\.Rmd$
+^CRAN-SUBMISSION$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
