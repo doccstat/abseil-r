@@ -34,7 +34,7 @@
     
     <a class="navbar-brand me-2" href="index.html">abseil</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2023.8.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2023.8.2.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,7 +104,9 @@ Development version
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<details open><summary>
+Directly usage in R
+</summary><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">Rcpp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Rcpp/man/cppFunction.html" class="external-link">cppFunction</a></span><span class="op">(</span><span class="st">r"{</span></span>
 <span><span class="st">  #include "absl/strings/str_join.h"</span></span>
 <span><span class="st">  std::string joinString() {</span></span>
@@ -112,8 +114,12 @@ Development version
 <span><span class="st">    return absl::StrJoin(v, "-");</span></span>
 <span><span class="st">  }</span></span>
 <span><span class="st">}"</span>, depends <span class="op">=</span> <span class="st">"abseil"</span><span class="op">)</span></span>
-<span><span class="fu">joinString</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span></span>
+<span><span class="fu">joinString</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "foo-bar-baz"</span></span></code></pre></div>
+</details><details close><summary>
+Usage in Rcpp package
+</summary><div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">"absl/strings/str_join.h"</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">//' @export</span></span>
@@ -123,6 +129,7 @@ Development version
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> absl<span class="op">::</span>StrJoin<span class="op">(</span>v<span class="op">,</span> <span class="st">"-"</span><span class="op">);</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
 <p>Bare minimum R package using the <code>abseil</code> package can be found at <a href="https://github.com/doccstat/abseil-r-example" class="external-link">doccstat/abseil-r-example</a>.</p>
+</details>
 </div>
 <div class="section level2">
 <h2 id="authors">Authors<a class="anchor" aria-label="anchor" href="#authors"></a>
