@@ -53,6 +53,11 @@ devtools::install_github("doccstat/abseil-r")
 
 ## Example
 
+<details open>
+<summary>
+Directly usage in R
+</summary>
+
 ``` r
 Rcpp::cppFunction(r"{
   #include "absl/strings/str_join.h"
@@ -61,8 +66,16 @@ Rcpp::cppFunction(r"{
     return absl::StrJoin(v, "-");
   }
 }", depends = "abseil")
+
 joinString()
+#> [1] "foo-bar-baz"
 ```
+
+</details>
+<details close>
+<summary>
+Usage in Rcpp package
+</summary>
 
 ``` cpp
 #include <Rcpp.h>
@@ -78,6 +91,8 @@ std::string joinString() {
 
 Bare minimum R package using the `abseil` package can be found at
 [doccstat/abseil-r-example](https://github.com/doccstat/abseil-r-example).
+
+</details>
 
 ## Authors
 

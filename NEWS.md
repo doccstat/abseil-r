@@ -1,3 +1,9 @@
+# abseil 2023.8.2.1
+
+*   Import Abseil LTS version 20230802.1.
+*   abseil-cpp changes:
+        https://github.com/abseil/abseil-cpp/releases/tag/20230802.1
+
 # abseil 2023.8.2.0
 
 *   Import Abseil LTS version 20230802.0

@@ -17,5 +17,6 @@ Rcpp::cppFunction(r"{
     return absl::StrJoin(v, "-");
   }
 }", depends = "abseil")
+
 joinString()
 }
