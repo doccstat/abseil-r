@@ -16,4 +16,5 @@ Suggests:
     Rcpp
 Encoding: UTF-8
 RoxygenNote: 7.2.3
-URL: https://abseil.xingchi.li/
+URL: https://abseil.xingchi.li, https://github.com/doccstat/abseil-r
+BugReports: https://github.com/doccstat/abseil-r/issues
