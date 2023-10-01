@@ -18,3 +18,5 @@ template:
 authors:
   Xingchi Li:
     href: https://www.xingchi.li
+  Abseil Team:
+    href: https://github.com/abseil/abseil-cpp
