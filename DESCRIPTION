@@ -1,7 +1,7 @@
 Type: Package
 Package: abseil
 Title: 'C++' Header Files from 'Abseil'
-Version: 2023.8.2.0
+Version: 2023.8.2.1
 Authors@R: c(
     person("Xingchi", "Li", , "anthony.li@stat.tamu.edu", role = c("ctb", "cre", "cph"),
            comment = c(ORCID = "0009-0006-2493-0853")),

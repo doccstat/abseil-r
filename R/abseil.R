@@ -15,5 +15,6 @@
 #'     return absl::StrJoin(v, "-");
 #'   }
 #' }", depends = "abseil")
+#'
 #' joinString()
 NULL

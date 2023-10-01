@@ -1,9 +1,8 @@
-## Resubmission
-This is a resubmission. In this version I have:
+## R CMD check results
 
-* Written package names, software names and API (application
-  programming interface) names in single quotes in title and description.
+❯ checking installed package size ... NOTE
+    installed size is 13.7Mb
+    sub-directories of 1Mb or more:
+      include  13.6Mb
 
-* More clearly identified the copyright holders in the DESCRIPTION.
-
-* Added a .Rd file with example and info on the package.
+0 errors ✔ | 0 warnings ✔ | 1 note ✖
