@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# abseil: Abseil Headers for R
+# abseil: Abseil Headers for R <a href="https://abseil.xingchi.li"><img src="man/figures/logo.svg" align="right" height="138" /></a>
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version-last-release/abseil)](https://cran.r-project.org/package=abseil)
