@@ -3,7 +3,7 @@ Package: abseil
 Title: 'C++' Header Files and Compiled Library from 'Abseil'
 Version: 2026.5.26.0
 Authors@R: c(
-    person("Xingchi", "Li", , "anthony.li@stat.tamu.edu", role = c("ctb", "cre", "cph"),
+    person("Xingchi", "Li", , "anthony.li.stat.tamu.edu@lixingchi.com", role = c("ctb", "cre", "cph"),
            comment = c(ORCID = "0009-0006-2493-0853")),
     person("Abseil Team", role = c("aut", "cph"))
   )
