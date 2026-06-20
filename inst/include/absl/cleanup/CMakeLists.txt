@@ -21,8 +21,8 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::base_internal
     absl::core_headers
+    absl::hardening
     absl::utility
   PUBLIC
 )
@@ -38,6 +38,7 @@ absl_cc_library(
     absl::cleanup_internal
     absl::config
     absl::core_headers
+    absl::hardening
   PUBLIC
 )
 

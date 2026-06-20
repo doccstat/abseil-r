@@ -45,22 +45,7 @@ namespace flags_internal {
 // AbslParseFlag specializations for boolean type.
 
 bool AbslParseFlag(absl::string_view text, bool* dst, std::string*) {
-  const char* kTrue[] = {"1", "t", "true", "y", "yes"};
-  const char* kFalse[] = {"0", "f", "false", "n", "no"};
-  static_assert(sizeof(kTrue) == sizeof(kFalse), "true_false_equal");
-
-  text = absl::StripAsciiWhitespace(text);
-
-  for (size_t i = 0; i < ABSL_ARRAYSIZE(kTrue); ++i) {
-    if (absl::EqualsIgnoreCase(text, kTrue[i])) {
-      *dst = true;
-      return true;
-    } else if (absl::EqualsIgnoreCase(text, kFalse[i])) {
-      *dst = false;
-      return true;
-    }
-  }
-  return false;  // didn't match a legal input
+  return SimpleAtob(absl::StripAsciiWhitespace(text), dst);
 }
 
 // --------------------------------------------------------------------
@@ -247,6 +232,14 @@ bool AbslParseFlag(absl::string_view text, absl::LogSeverity* dst,
     *err = "no value provided";
     return false;
   }
+  if (absl::EqualsIgnoreCase(text, "dfatal")) {
+    *dst = absl::kLogDebugFatal;
+    return true;
+  }
+  if (absl::EqualsIgnoreCase(text, "klogdebugfatal")) {
+    *dst = absl::kLogDebugFatal;
+    return true;
+  }
   if (text.front() == 'k' || text.front() == 'K') text.remove_prefix(1);
   if (absl::EqualsIgnoreCase(text, "info")) {
     *dst = absl::LogSeverity::kInfo;
@@ -269,7 +262,8 @@ bool AbslParseFlag(absl::string_view text, absl::LogSeverity* dst,
     *dst = static_cast<absl::LogSeverity>(numeric_value);
     return true;
   }
-  *err = "only integers and absl::LogSeverity enumerators are accepted";
+  *err =
+      "only integers, absl::LogSeverity enumerators, and DFATAL are accepted";
   return false;
 }
 

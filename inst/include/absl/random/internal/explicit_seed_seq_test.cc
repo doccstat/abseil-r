@@ -29,14 +29,18 @@ using ::absl::random_internal::ExplicitSeedSeq;
 template <typename Sseq>
 bool ConformsToInterface() {
   // Check that the SeedSequence can be default-constructed.
-  { Sseq default_constructed_seq; }
+  {
+    Sseq default_constructed_seq;
+  }
   // Check that the SeedSequence can be constructed with two iterators.
   {
     uint32_t init_array[] = {1, 3, 5, 7, 9};
     Sseq iterator_constructed_seq(init_array, &init_array[5]);
   }
   // Check that the SeedSequence can be std::initializer_list-constructed.
-  { Sseq list_constructed_seq = {1, 3, 5, 7, 9, 11, 13}; }
+  {
+    Sseq list_constructed_seq = {1, 3, 5, 7, 9, 11, 13};
+  }
   // Check that param() and size() return state provided to constructor.
   {
     uint32_t init_array[] = {1, 2, 3, 4, 5};
@@ -166,14 +170,14 @@ TEST(ExplicitSeedSeq, CopyAndMoveConstructors) {
 
     // Apply the assignment-operator.
     // GCC 12 has a false-positive -Wstringop-overflow warning here.
-// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
 // #pragma GCC diagnostic push
 // #pragma GCC diagnostic ignored "-Wstringop-overflow"
-// #endif
+#endif
     another_seq = seq_from_entropy;
-// #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
 // #pragma GCC diagnostic pop
-// #endif
+#endif
 
     // Re-generate seeds.
     seq_from_entropy.generate(seeds_1.begin(), seeds_1.end());

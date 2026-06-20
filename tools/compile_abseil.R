@@ -39,12 +39,16 @@ cc_files <- list.files(
   recursive = TRUE,
   full.names = TRUE
 )
-# Exclude test helpers (need gtest/gmock) and benchmark files (need benchmark.h).
+# Exclude test/mock/benchmark helpers and gmock-based matchers.
 cc_files <- cc_files[!grepl(
-  "test|mock|benchmark",
+  "test|mock|benchmark|matchers",
   basename(cc_files),
   ignore.case = TRUE
 )]
+# Exclude Windows-only sources on non-Windows platforms.
+if (.Platform$OS.type != "windows") {
+  cc_files <- cc_files[!grepl("_win\\.cc$", cc_files, ignore.case = TRUE)]
+}
 cc_files <- normalizePath(cc_files, winslash = "/")
 
 extra_flags <- paste(c(cxx17std, fpic), collapse = " ")

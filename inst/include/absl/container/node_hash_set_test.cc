@@ -14,20 +14,36 @@
 
 #include "absl/container/node_hash_set.h"
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/base/config.h"
+#include "absl/container/internal/hash_generator_testing.h"
+#include "absl/container/internal/hash_policy_testing.h"
 #include "absl/container/internal/unordered_set_constructor_test.h"
 #include "absl/container/internal/unordered_set_lookup_test.h"
 #include "absl/container/internal/unordered_set_members_test.h"
 #include "absl/container/internal/unordered_set_modifiers_test.h"
+#include "absl/memory/memory.h"
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+#include <ranges>  // NOLINT(build/c++20)
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 namespace {
-using ::absl::container_internal::hash_internal::Enum;
-using ::absl::container_internal::hash_internal::EnumClass;
+
 using ::testing::IsEmpty;
 using ::testing::Pointee;
 using ::testing::UnorderedElementsAre;
+using ::testing::UnorderedElementsAreArray;
 
 using SetTypes = ::testing::Types<
     node_hash_set<int, StatefulTestingHash, StatefulTestingEqual, Alloc<int>>,
@@ -59,11 +75,11 @@ TEST(NodeHashSet, MergeExtractInsert) {
     }
   };
   absl::node_hash_set<std::unique_ptr<int>, Hash, Eq> set1, set2;
-  set1.insert(absl::make_unique<int>(7));
-  set1.insert(absl::make_unique<int>(17));
+  set1.insert(std::make_unique<int>(7));
+  set1.insert(std::make_unique<int>(17));
 
-  set2.insert(absl::make_unique<int>(7));
-  set2.insert(absl::make_unique<int>(19));
+  set2.insert(std::make_unique<int>(7));
+  set2.insert(std::make_unique<int>(19));
 
   EXPECT_THAT(set1, UnorderedElementsAre(Pointee(7), Pointee(17)));
   EXPECT_THAT(set2, UnorderedElementsAre(Pointee(7), Pointee(19)));
@@ -73,7 +89,7 @@ TEST(NodeHashSet, MergeExtractInsert) {
   EXPECT_THAT(set1, UnorderedElementsAre(Pointee(7), Pointee(17), Pointee(19)));
   EXPECT_THAT(set2, UnorderedElementsAre(Pointee(7)));
 
-  auto node = set1.extract(absl::make_unique<int>(7));
+  auto node = set1.extract(std::make_unique<int>(7));
   EXPECT_TRUE(node);
   EXPECT_THAT(node.value(), Pointee(7));
   EXPECT_THAT(set1, UnorderedElementsAre(Pointee(17), Pointee(19)));
@@ -87,12 +103,12 @@ TEST(NodeHashSet, MergeExtractInsert) {
   EXPECT_NE(insert_result.position->get(), insert_result.node.value().get());
   EXPECT_THAT(set2, UnorderedElementsAre(Pointee(7)));
 
-  node = set1.extract(absl::make_unique<int>(17));
+  node = set1.extract(std::make_unique<int>(17));
   EXPECT_TRUE(node);
   EXPECT_THAT(node.value(), Pointee(17));
   EXPECT_THAT(set1, UnorderedElementsAre(Pointee(19)));
 
-  node.value() = absl::make_unique<int>(23);
+  node.value() = std::make_unique<int>(23);
 
   insert_result = set2.insert(std::move(node));
   EXPECT_FALSE(node);
@@ -136,6 +152,67 @@ TEST(NodeHashSet, EraseIf) {
     EXPECT_THAT(s, UnorderedElementsAre(1, 3, 5));
   }
 }
+
+TEST(NodeHashSet, CForEach) {
+  using ValueType = std::pair<int, int>;
+  node_hash_set<ValueType> s;
+  std::vector<ValueType> expected;
+  for (int i = 0; i < 100; ++i) {
+    {
+      SCOPED_TRACE("mutable object iteration");
+      std::vector<ValueType> v;
+      absl::container_internal::c_for_each_fast(
+          s, [&v](const ValueType& p) { v.push_back(p); });
+      ASSERT_THAT(v, UnorderedElementsAreArray(expected));
+    }
+    {
+      SCOPED_TRACE("const object iteration");
+      std::vector<ValueType> v;
+      const node_hash_set<ValueType>& cs = s;
+      absl::container_internal::c_for_each_fast(
+          cs, [&v](const ValueType& p) { v.push_back(p); });
+      ASSERT_THAT(v, UnorderedElementsAreArray(expected));
+    }
+    {
+      SCOPED_TRACE("temporary object iteration");
+      std::vector<ValueType> v;
+      absl::container_internal::c_for_each_fast(
+          node_hash_set<ValueType>(s),
+          [&v](const ValueType& p) { v.push_back(p); });
+      ASSERT_THAT(v, UnorderedElementsAreArray(expected));
+    }
+    s.emplace(i, i);
+    expected.emplace_back(i, i);
+  }
+}
+
+#if defined(__cpp_lib_containers_ranges) && \
+    __cpp_lib_containers_ranges >= 202202L
+TEST(NodeHashSet, FromRange) {
+  std::vector<int> v = {1, 2, 3, 4, 5};
+  absl::node_hash_set<int> s(std::from_range, v);
+  EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST(NodeHashSet, FromRangeWithAllocator) {
+  std::vector<int> v = {1, 2, 3, 4, 5};
+  absl::node_hash_set<int, absl::container_internal::hash_default_hash<int>,
+                      absl::container_internal::hash_default_eq<int>,
+                      Alloc<int>>
+      s(std::from_range, v, 0, Alloc<int>());
+  EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST(NodeHashSet, FromRangeWithHasherAndAllocator) {
+  std::vector<int> v = {1, 2, 3, 4, 5};
+  using TestingHash = absl::container_internal::StatefulTestingHash;
+  absl::node_hash_set<int, TestingHash,
+                      absl::container_internal::hash_default_eq<int>,
+                      Alloc<int>>
+      s(std::from_range, v, 0, TestingHash{}, Alloc<int>());
+  EXPECT_THAT(s, UnorderedElementsAre(1, 2, 3, 4, 5));
+}
+#endif
 
 }  // namespace
 }  // namespace container_internal

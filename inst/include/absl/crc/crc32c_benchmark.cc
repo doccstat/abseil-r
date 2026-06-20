@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <string>
 
 #include "absl/crc/crc32c.h"
@@ -40,7 +41,13 @@ void BM_Calculate(benchmark::State& state) {
     benchmark::DoNotOptimize(crc);
   }
 }
-BENCHMARK(BM_Calculate)->Arg(0)->Arg(1)->Arg(100)->Arg(10000)->Arg(500000);
+BENCHMARK(BM_Calculate)
+    ->Arg(0)
+    ->Arg(1)
+    ->Arg(100)
+    ->Arg(2048)
+    ->Arg(10000)
+    ->Arg(500000);
 
 void BM_Extend(benchmark::State& state) {
   int len = state.range(0);
@@ -53,8 +60,14 @@ void BM_Extend(benchmark::State& state) {
     benchmark::DoNotOptimize(crc);
   }
 }
-BENCHMARK(BM_Extend)->Arg(0)->Arg(1)->Arg(100)->Arg(10000)->Arg(500000)->Arg(
-    100 * 1000 * 1000);
+BENCHMARK(BM_Extend)
+    ->Arg(0)
+    ->Arg(1)
+    ->Arg(100)
+    ->Arg(2048)
+    ->Arg(10000)
+    ->Arg(500000)
+    ->Arg(100 * 1000 * 1000);
 
 // Make working set >> CPU cache size to benchmark prefetches better
 void BM_ExtendCacheMiss(benchmark::State& state) {
@@ -132,7 +145,7 @@ void BM_Memcpy(benchmark::State& state) {
   int string_len = state.range(0);
 
   std::string source = TestString(string_len);
-  auto dest = absl::make_unique<char[]>(string_len);
+  auto dest = std::make_unique<char[]>(string_len);
 
   for (auto s : state) {
     benchmark::DoNotOptimize(source);
@@ -147,7 +160,8 @@ void BM_Memcpy(benchmark::State& state) {
   state.SetBytesProcessed(static_cast<int64_t>(state.iterations()) *
                           state.range(0));
 }
-BENCHMARK(BM_Memcpy)->Arg(0)->Arg(1)->Arg(100)->Arg(10000)->Arg(500000);
+BENCHMARK(BM_Memcpy)->Arg(0)->Arg(1)->Arg(100)->Arg(2048)->Arg(10000)->Arg(
+    500000);
 
 void BM_RemoveSuffix(benchmark::State& state) {
   int full_string_len = state.range(0);

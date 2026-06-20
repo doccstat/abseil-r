@@ -25,8 +25,9 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <string>
 #include <tuple>
-#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -427,6 +428,42 @@ TEST(StrJoin, InitializerList) {
   }
 }
 
+TEST(StrJoin, StringViewInitializerList) {
+  {
+    // Tests initializer_list of string_views
+    std::string b = "b";
+    EXPECT_EQ("a-b-c", absl::StrJoin({"a", b, "c"}, "-"));
+  }
+  {
+    // Tests initializer_list of string_views with a non-default formatter
+    TestingParenFormatter f;
+    std::string b = "b";
+    EXPECT_EQ("(a)-(b)-(c)", absl::StrJoin({"a", b, "c"}, "-", f));
+  }
+
+  class NoCopy {
+   public:
+    explicit NoCopy(absl::string_view view) : view_(view) {}
+    NoCopy(const NoCopy&) = delete;
+    operator absl::string_view() { return view_; }  // NOLINT
+   private:
+    absl::string_view view_;
+  };
+  {
+    // Tests initializer_list of string_views preferred over initializer_list<T>
+    // for T that is implicitly convertible to string_view
+    EXPECT_EQ("a-b-c",
+              absl::StrJoin({NoCopy("a"), NoCopy("b"), NoCopy("c")}, "-"));
+  }
+  {
+    // Tests initializer_list of string_views preferred over initializer_list<T>
+    // for T that is implicitly convertible to string_view
+    TestingParenFormatter f;
+    EXPECT_EQ("(a)-(b)-(c)",
+              absl::StrJoin({NoCopy("a"), NoCopy("b"), NoCopy("c")}, "-", f));
+  }
+}
+
 TEST(StrJoin, Tuple) {
   EXPECT_EQ("", absl::StrJoin(std::make_tuple(), "-"));
   EXPECT_EQ("hello", absl::StrJoin(std::make_tuple("hello"), "-"));
@@ -464,12 +501,12 @@ TEST(StrJoin, Tuple) {
             absl::StrJoin(std::make_tuple(&x, &y, &z), "-",
                           absl::DereferenceFormatter(TestFormatter())));
   EXPECT_EQ("0x0000000a-hell-3.",
-            absl::StrJoin(std::make_tuple(absl::make_unique<int>(x),
-                                          absl::make_unique<std::string>(y),
-                                          absl::make_unique<double>(z)),
+            absl::StrJoin(std::make_tuple(std::make_unique<int>(x),
+                                          std::make_unique<std::string>(y),
+                                          std::make_unique<double>(z)),
                           "-", absl::DereferenceFormatter(TestFormatter())));
   EXPECT_EQ("0x0000000a-hell-3.",
-            absl::StrJoin(std::make_tuple(absl::make_unique<int>(x), &y, &z),
+            absl::StrJoin(std::make_tuple(std::make_unique<int>(x), &y, &z),
                           "-", absl::DereferenceFormatter(TestFormatter())));
 }
 

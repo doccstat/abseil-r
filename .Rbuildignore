@@ -11,3 +11,4 @@
 ^.vscode$
 ^src/absl_objs$
 ^src/libabsl\.a$
+^abseil-cpp-.*\.tar\.gz$
