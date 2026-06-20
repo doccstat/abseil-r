@@ -1,0 +1,4 @@
+#!/bin/sh
+# configure -- runs before src/ is compiled during R CMD INSTALL on Unix/macOS.
+# Compiles all abseil .cc files into src/libabsl.a.
+"${R_HOME}/bin/Rscript" --vanilla tools/compile_abseil.R
