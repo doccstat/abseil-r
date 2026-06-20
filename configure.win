@@ -1,5 +1,4 @@
-@echo off
-REM configure.win -- runs before src/ is compiled during R CMD INSTALL on Windows.
-REM Compiles all abseil .cc files into src/libabsl.a via Rtools.
-"%R_HOME%\bin\Rscript.exe" --vanilla tools/compile_abseil.R
-if %ERRORLEVEL% NEQ 0 exit /b 1
+#!/bin/sh
+# configure.win -- runs before src/ is compiled during R CMD INSTALL on Windows.
+# Executed by Rtools' sh (MSYS2), not cmd.exe -- must be a POSIX shell script.
+"${R_HOME}/bin/Rscript.exe" --vanilla tools/compile_abseil.R
