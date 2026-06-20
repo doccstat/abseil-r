@@ -1,3 +1,13 @@
+# abseil 2023.8.2.2
+
+*   Package is now compiled (`NeedsCompilation: yes`).
+*   The `configure` script (Unix/macOS) and `configure.win` (Windows) compile all
+    153 production Abseil source files in `inst/include/absl/` into a static
+    library `libabsl.a`, which is installed into the package's `libs/` directory.
+*   Added `abseil_lib()` R function that returns the path to the installed
+    `libabsl.a`, allowing downstream packages to link non-header-only Abseil
+    components without recompiling the library themselves.
+
 # abseil 2023.8.2.1
 
 *   Import Abseil LTS version 20230802.1.

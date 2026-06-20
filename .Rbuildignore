@@ -8,3 +8,5 @@
 ^pkgdown$
 ^\.github$
 ^.vscode$
+^src/absl_objs$
+^src/libabsl\.a$

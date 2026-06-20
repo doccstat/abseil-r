@@ -52,6 +52,8 @@ rsconnect/
 src/*.o
 src/*.so
 src/*.dll
+src/*.a
+src/absl_objs/
 inst/doc
 vignettes/*.aux
 .vscode/
