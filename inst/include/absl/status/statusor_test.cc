@@ -14,155 +14,48 @@
 
 #include "absl/status/statusor.h"
 
+#include <any>
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
+#include <map>
 #include <memory>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
+#include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/casts.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/status_matchers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/any.h"
+#include "absl/types/source_location.h"
 #include "absl/utility/utility.h"
 
 namespace {
 
+using ::absl_testing::IsOk;
+using ::absl_testing::IsOkAndHolds;
 using ::testing::AllOf;
+using ::testing::AnyOf;
 using ::testing::AnyWith;
 using ::testing::ElementsAre;
+using ::testing::EndsWith;
 using ::testing::Field;
 using ::testing::HasSubstr;
 using ::testing::Ne;
 using ::testing::Not;
 using ::testing::Pointee;
+using ::testing::StartsWith;
 using ::testing::VariantWith;
-
-#ifdef GTEST_HAS_STATUS_MATCHERS
-using ::testing::status::IsOk;
-using ::testing::status::IsOkAndHolds;
-#else  // GTEST_HAS_STATUS_MATCHERS
-inline const ::absl::Status& GetStatus(const ::absl::Status& status) {
-  return status;
-}
-
-template <typename T>
-inline const ::absl::Status& GetStatus(const ::absl::StatusOr<T>& status) {
-  return status.status();
-}
-
-// Monomorphic implementation of matcher IsOkAndHolds(m).  StatusOrType is a
-// reference to StatusOr<T>.
-template <typename StatusOrType>
-class IsOkAndHoldsMatcherImpl
-    : public ::testing::MatcherInterface<StatusOrType> {
- public:
-  typedef
-      typename std::remove_reference<StatusOrType>::type::value_type value_type;
-
-  template <typename InnerMatcher>
-  explicit IsOkAndHoldsMatcherImpl(InnerMatcher&& inner_matcher)
-      : inner_matcher_(::testing::SafeMatcherCast<const value_type&>(
-            std::forward<InnerMatcher>(inner_matcher))) {}
-
-  void DescribeTo(std::ostream* os) const override {
-    *os << "is OK and has a value that ";
-    inner_matcher_.DescribeTo(os);
-  }
-
-  void DescribeNegationTo(std::ostream* os) const override {
-    *os << "isn't OK or has a value that ";
-    inner_matcher_.DescribeNegationTo(os);
-  }
-
-  bool MatchAndExplain(
-      StatusOrType actual_value,
-      ::testing::MatchResultListener* result_listener) const override {
-    if (!actual_value.ok()) {
-      *result_listener << "which has status " << actual_value.status();
-      return false;
-    }
-
-    ::testing::StringMatchResultListener inner_listener;
-    const bool matches =
-        inner_matcher_.MatchAndExplain(*actual_value, &inner_listener);
-    const std::string inner_explanation = inner_listener.str();
-    if (!inner_explanation.empty()) {
-      *result_listener << "which contains value "
-                       << ::testing::PrintToString(*actual_value) << ", "
-                       << inner_explanation;
-    }
-    return matches;
-  }
-
- private:
-  const ::testing::Matcher<const value_type&> inner_matcher_;
-};
-
-// Implements IsOkAndHolds(m) as a polymorphic matcher.
-template <typename InnerMatcher>
-class IsOkAndHoldsMatcher {
- public:
-  explicit IsOkAndHoldsMatcher(InnerMatcher inner_matcher)
-      : inner_matcher_(std::move(inner_matcher)) {}
-
-  // Converts this polymorphic matcher to a monomorphic matcher of the
-  // given type.  StatusOrType can be either StatusOr<T> or a
-  // reference to StatusOr<T>.
-  template <typename StatusOrType>
-  operator ::testing::Matcher<StatusOrType>() const {  // NOLINT
-    return ::testing::Matcher<StatusOrType>(
-        new IsOkAndHoldsMatcherImpl<const StatusOrType&>(inner_matcher_));
-  }
-
- private:
-  const InnerMatcher inner_matcher_;
-};
-
-// Monomorphic implementation of matcher IsOk() for a given type T.
-// T can be Status, StatusOr<>, or a reference to either of them.
-template <typename T>
-class MonoIsOkMatcherImpl : public ::testing::MatcherInterface<T> {
- public:
-  void DescribeTo(std::ostream* os) const override { *os << "is OK"; }
-  void DescribeNegationTo(std::ostream* os) const override {
-    *os << "is not OK";
-  }
-  bool MatchAndExplain(T actual_value,
-                       ::testing::MatchResultListener*) const override {
-    return GetStatus(actual_value).ok();
-  }
-};
-
-// Implements IsOk() as a polymorphic matcher.
-class IsOkMatcher {
- public:
-  template <typename T>
-  operator ::testing::Matcher<T>() const {  // NOLINT
-    return ::testing::Matcher<T>(new MonoIsOkMatcherImpl<T>());
-  }
-};
-
-// Macros for testing the results of functions that return absl::Status or
-// absl::StatusOr<T> (for any type T).
-#define EXPECT_OK(expression) EXPECT_THAT(expression, IsOk())
-
-// Returns a gMock matcher that matches a StatusOr<> whose status is
-// OK and whose value matches the inner matcher.
-template <typename InnerMatcher>
-IsOkAndHoldsMatcher<typename std::decay<InnerMatcher>::type> IsOkAndHolds(
-    InnerMatcher&& inner_matcher) {
-  return IsOkAndHoldsMatcher<typename std::decay<InnerMatcher>::type>(
-      std::forward<InnerMatcher>(inner_matcher));
-}
-
-// Returns a gMock matcher that matches a Status or StatusOr<> which is OK.
-inline IsOkMatcher IsOk() { return IsOkMatcher(); }
-#endif  // GTEST_HAS_STATUS_MATCHERS
 
 struct CopyDetector {
   CopyDetector() = default;
@@ -222,7 +115,7 @@ class CopyNoAssign {
 
 absl::StatusOr<std::unique_ptr<int>> ReturnUniquePtr() {
   // Uses implicit constructor from T&&
-  return absl::make_unique<int>(0);
+  return std::make_unique<int>(0);
 }
 
 TEST(StatusOr, ElementType) {
@@ -465,7 +358,7 @@ struct Foo {
 };
 
 TEST(StatusOr, InPlaceConstruction) {
-  EXPECT_THAT(absl::StatusOr<Foo>(absl::in_place, 10),
+  EXPECT_THAT(absl::StatusOr<Foo>(std::in_place, 10),
               IsOkAndHolds(Field(&Foo::x, 10)));
 }
 
@@ -477,8 +370,8 @@ struct InPlaceHelper {
 };
 
 TEST(StatusOr, InPlaceInitListConstruction) {
-  absl::StatusOr<InPlaceHelper> status_or(absl::in_place, {10, 11, 12},
-                                          absl::make_unique<int>(13));
+  absl::StatusOr<InPlaceHelper> status_or(std::in_place, {10, 11, 12},
+                                          std::make_unique<int>(13));
   EXPECT_THAT(status_or, IsOkAndHolds(AllOf(
                              Field(&InPlaceHelper::x, ElementsAre(10, 11, 12)),
                              Field(&InPlaceHelper::y, Pointee(13)))));
@@ -497,9 +390,9 @@ TEST(StatusOr, Emplace) {
 }
 
 TEST(StatusOr, EmplaceInitializerList) {
-  absl::StatusOr<InPlaceHelper> status_or(absl::in_place, {10, 11, 12},
-                                          absl::make_unique<int>(13));
-  status_or.emplace({1, 2, 3}, absl::make_unique<int>(4));
+  absl::StatusOr<InPlaceHelper> status_or(std::in_place, {10, 11, 12},
+                                          std::make_unique<int>(13));
+  status_or.emplace({1, 2, 3}, std::make_unique<int>(4));
   EXPECT_THAT(status_or,
               IsOkAndHolds(AllOf(Field(&InPlaceHelper::x, ElementsAre(1, 2, 3)),
                                  Field(&InPlaceHelper::y, Pointee(4)))));
@@ -507,7 +400,7 @@ TEST(StatusOr, EmplaceInitializerList) {
   EXPECT_FALSE(status_or.ok());
   EXPECT_EQ(status_or.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status_or.status().message(), "msg");
-  status_or.emplace({1, 2, 3}, absl::make_unique<int>(4));
+  status_or.emplace({1, 2, 3}, std::make_unique<int>(4));
   EXPECT_THAT(status_or,
               IsOkAndHolds(AllOf(Field(&InPlaceHelper::x, ElementsAre(1, 2, 3)),
                                  Field(&InPlaceHelper::y, Pointee(4)))));
@@ -517,7 +410,7 @@ TEST(StatusOr, TestCopyCtorStatusOk) {
   const int kI = 4;
   const absl::StatusOr<int> original(kI);
   const absl::StatusOr<int> copy(original);
-  EXPECT_OK(copy.status());
+  EXPECT_THAT(copy.status(), IsOk());
   EXPECT_EQ(*original, *copy);
 }
 
@@ -532,7 +425,7 @@ TEST(StatusOr, TestCopyCtorNonAssignable) {
   CopyNoAssign value(kI);
   absl::StatusOr<CopyNoAssign> original(value);
   absl::StatusOr<CopyNoAssign> copy(original);
-  EXPECT_OK(copy.status());
+  EXPECT_THAT(copy.status(), IsOk());
   EXPECT_EQ(original->foo, copy->foo);
 }
 
@@ -540,7 +433,7 @@ TEST(StatusOr, TestCopyCtorStatusOKConverting) {
   const int kI = 4;
   absl::StatusOr<int> original(kI);
   absl::StatusOr<double> copy(original);
-  EXPECT_OK(copy.status());
+  EXPECT_THAT(copy.status(), IsOk());
   EXPECT_DOUBLE_EQ(*original, *copy);
 }
 
@@ -560,15 +453,15 @@ TEST(StatusOr, TestAssignmentStatusOk) {
     target = source;
 
     ASSERT_TRUE(target.ok());
-    EXPECT_OK(target.status());
+    EXPECT_THAT(target.status(), IsOk());
     EXPECT_EQ(p, *target);
 
     ASSERT_TRUE(source.ok());
-    EXPECT_OK(source.status());
+    EXPECT_THAT(source.status(), IsOk());
     EXPECT_EQ(p, *source);
   }
 
-  // Move asssignment
+  // Move assignment
   {
     const auto p = std::make_shared<int>(17);
     absl::StatusOr<std::shared_ptr<int>> source(p);
@@ -577,11 +470,11 @@ TEST(StatusOr, TestAssignmentStatusOk) {
     target = std::move(source);
 
     ASSERT_TRUE(target.ok());
-    EXPECT_OK(target.status());
+    EXPECT_THAT(target.status(), IsOk());
     EXPECT_EQ(p, *target);
 
     ASSERT_TRUE(source.ok());
-    EXPECT_OK(source.status());
+    EXPECT_THAT(source.status(), IsOk());
     EXPECT_EQ(nullptr, *source);
   }
 }
@@ -628,11 +521,11 @@ TEST(StatusOr, TestAssignmentStatusOKConverting) {
     target = source;
 
     ASSERT_TRUE(target.ok());
-    EXPECT_OK(target.status());
+    EXPECT_THAT(target.status(), IsOk());
     EXPECT_DOUBLE_EQ(kI, *target);
 
     ASSERT_TRUE(source.ok());
-    EXPECT_OK(source.status());
+    EXPECT_THAT(source.status(), IsOk());
     EXPECT_DOUBLE_EQ(kI, *source);
   }
 
@@ -645,11 +538,11 @@ TEST(StatusOr, TestAssignmentStatusOKConverting) {
     target = std::move(source);
 
     ASSERT_TRUE(target.ok());
-    EXPECT_OK(target.status());
+    EXPECT_THAT(target.status(), IsOk());
     EXPECT_EQ(p, target->get());
 
     ASSERT_TRUE(source.ok());
-    EXPECT_OK(source.status());
+    EXPECT_THAT(source.status(), IsOk());
     EXPECT_EQ(nullptr, source->get());
   }
 }
@@ -804,13 +697,13 @@ TEST(StatusOr, ExplicitConstruction) {
 TEST(StatusOr, ImplicitConstruction) {
   // Check implicit casting works.
   auto status_or =
-      absl::implicit_cast<absl::StatusOr<absl::variant<int, std::string>>>(10);
+      absl::implicit_cast<absl::StatusOr<std::variant<int, std::string>>>(10);
   EXPECT_THAT(status_or, IsOkAndHolds(VariantWith<int>(10)));
 }
 
 TEST(StatusOr, ImplicitConstructionFromInitliazerList) {
   // Note: dropping the explicit std::initializer_list<int> is not supported
-  // by absl::StatusOr or absl::optional.
+  // by absl::StatusOr or std::optional.
   auto status_or =
       absl::implicit_cast<absl::StatusOr<std::vector<int>>>({{10, 20, 30}});
   EXPECT_THAT(status_or, IsOkAndHolds(ElementsAre(10, 20, 30)));
@@ -818,7 +711,7 @@ TEST(StatusOr, ImplicitConstructionFromInitliazerList) {
 
 TEST(StatusOr, UniquePtrImplicitConstruction) {
   auto status_or = absl::implicit_cast<absl::StatusOr<std::unique_ptr<Base1>>>(
-      absl::make_unique<Derived>());
+      std::make_unique<Derived>());
   EXPECT_THAT(status_or, IsOkAndHolds(Ne(nullptr)));
 }
 
@@ -904,49 +797,49 @@ TEST(StatusOr, CopyAndMoveAbility) {
 }
 
 TEST(StatusOr, StatusOrAnyCopyAndMoveConstructorTests) {
-  absl::StatusOr<absl::any> status_or = CopyDetector(10);
-  absl::StatusOr<absl::any> status_error = absl::InvalidArgumentError("foo");
+  absl::StatusOr<std::any> status_or = CopyDetector(10);
+  absl::StatusOr<std::any> status_error = absl::InvalidArgumentError("foo");
   EXPECT_THAT(
       status_or,
       IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, true, false))));
-  absl::StatusOr<absl::any> a = status_or;
+  absl::StatusOr<std::any> a = status_or;
   EXPECT_THAT(
       a, IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, false, true))));
-  absl::StatusOr<absl::any> a_err = status_error;
+  absl::StatusOr<std::any> a_err = status_error;
   EXPECT_THAT(a_err, Not(IsOk()));
 
-  const absl::StatusOr<absl::any>& cref = status_or;
+  const absl::StatusOr<std::any>& cref = status_or;
   // No lint for no-change copy.
-  absl::StatusOr<absl::any> b = cref;  // NOLINT
+  absl::StatusOr<std::any> b = cref;  // NOLINT
   EXPECT_THAT(
       b, IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, false, true))));
-  const absl::StatusOr<absl::any>& cref_err = status_error;
+  const absl::StatusOr<std::any>& cref_err = status_error;
   // No lint for no-change copy.
-  absl::StatusOr<absl::any> b_err = cref_err;  // NOLINT
+  absl::StatusOr<std::any> b_err = cref_err;  // NOLINT
   EXPECT_THAT(b_err, Not(IsOk()));
 
-  absl::StatusOr<absl::any> c = std::move(status_or);
+  absl::StatusOr<std::any> c = std::move(status_or);
   EXPECT_THAT(
       c, IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, true, false))));
-  absl::StatusOr<absl::any> c_err = std::move(status_error);
+  absl::StatusOr<std::any> c_err = std::move(status_error);
   EXPECT_THAT(c_err, Not(IsOk()));
 }
 
 TEST(StatusOr, StatusOrAnyCopyAndMoveAssignment) {
-  absl::StatusOr<absl::any> status_or = CopyDetector(10);
-  absl::StatusOr<absl::any> status_error = absl::InvalidArgumentError("foo");
-  absl::StatusOr<absl::any> a;
+  absl::StatusOr<std::any> status_or = CopyDetector(10);
+  absl::StatusOr<std::any> status_error = absl::InvalidArgumentError("foo");
+  absl::StatusOr<std::any> a;
   a = status_or;
   EXPECT_THAT(
       a, IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, false, true))));
   a = status_error;
   EXPECT_THAT(a, Not(IsOk()));
 
-  const absl::StatusOr<absl::any>& cref = status_or;
+  const absl::StatusOr<std::any>& cref = status_or;
   a = cref;
   EXPECT_THAT(
       a, IsOkAndHolds(AnyWith<CopyDetector>(CopyDetectorHas(10, false, true))));
-  const absl::StatusOr<absl::any>& cref_err = status_error;
+  const absl::StatusOr<std::any>& cref_err = status_error;
   a = cref_err;
   EXPECT_THAT(a, Not(IsOk()));
   a = std::move(status_or);
@@ -984,15 +877,15 @@ TEST(StatusOr, StatusOrCopyAndMoveTestsAssignment) {
 }
 
 TEST(StatusOr, AbslAnyAssignment) {
-  EXPECT_FALSE((std::is_assignable<absl::StatusOr<absl::any>,
+  EXPECT_FALSE((std::is_assignable<absl::StatusOr<std::any>,
                                    absl::StatusOr<int>>::value));
-  absl::StatusOr<absl::any> status_or;
+  absl::StatusOr<std::any> status_or;
   status_or = absl::InvalidArgumentError("foo");
   EXPECT_THAT(status_or, Not(IsOk()));
 }
 
 TEST(StatusOr, ImplicitAssignment) {
-  absl::StatusOr<absl::variant<int, std::string>> status_or;
+  absl::StatusOr<std::variant<int, std::string>> status_or;
   status_or = 10;
   EXPECT_THAT(status_or, IsOkAndHolds(VariantWith<int>(10)));
 }
@@ -1010,7 +903,7 @@ TEST(StatusOr, ImplicitCastFromInitializerList) {
 
 TEST(StatusOr, UniquePtrImplicitAssignment) {
   absl::StatusOr<std::unique_ptr<Base1>> status_or;
-  status_or = absl::make_unique<Derived>();
+  status_or = std::make_unique<Derived>();
   EXPECT_THAT(status_or, IsOkAndHolds(Ne(nullptr)));
 }
 
@@ -1068,7 +961,7 @@ TEST(StatusOr, SelfAssignment) {
     so = *&so;
 
     ASSERT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(long_str, *so);
   }
 
@@ -1091,7 +984,7 @@ TEST(StatusOr, SelfAssignment) {
     so = std::move(same);
 
     ASSERT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(17, *so);
   }
 
@@ -1118,7 +1011,7 @@ TEST(StatusOr, SelfAssignment) {
     so = std::move(same);
 
     ASSERT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(raw, so->get());
   }
 
@@ -1351,7 +1244,7 @@ TEST(StatusOr, TestPointerValueCtor) {
   {
     absl::StatusOr<const int*> so(&kI);
     EXPECT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(&kI, *so);
   }
 
@@ -1359,7 +1252,7 @@ TEST(StatusOr, TestPointerValueCtor) {
   {
     absl::StatusOr<const int*> so(nullptr);
     EXPECT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(nullptr, *so);
   }
 
@@ -1369,7 +1262,7 @@ TEST(StatusOr, TestPointerValueCtor) {
 
     absl::StatusOr<const int*> so(p);
     EXPECT_TRUE(so.ok());
-    EXPECT_OK(so.status());
+    EXPECT_THAT(so.status(), IsOk());
     EXPECT_EQ(nullptr, *so);
   }
 }
@@ -1378,7 +1271,7 @@ TEST(StatusOr, TestPointerCopyCtorStatusOk) {
   const int kI = 0;
   absl::StatusOr<const int*> original(&kI);
   absl::StatusOr<const int*> copy(original);
-  EXPECT_OK(copy.status());
+  EXPECT_THAT(copy.status(), IsOk());
   EXPECT_EQ(*original, *copy);
 }
 
@@ -1392,7 +1285,7 @@ TEST(StatusOr, TestPointerCopyCtorStatusOKConverting) {
   Derived derived;
   absl::StatusOr<Derived*> original(&derived);
   absl::StatusOr<Base2*> copy(original);
-  EXPECT_OK(copy.status());
+  EXPECT_THAT(copy.status(), IsOk());
   EXPECT_EQ(static_cast<const Base2*>(*original), *copy);
 }
 
@@ -1407,7 +1300,7 @@ TEST(StatusOr, TestPointerAssignmentStatusOk) {
   absl::StatusOr<const int*> source(&kI);
   absl::StatusOr<const int*> target;
   target = source;
-  EXPECT_OK(target.status());
+  EXPECT_THAT(target.status(), IsOk());
   EXPECT_EQ(*source, *target);
 }
 
@@ -1423,7 +1316,7 @@ TEST(StatusOr, TestPointerAssignmentStatusOKConverting) {
   absl::StatusOr<Derived*> source(&derived);
   absl::StatusOr<Base2*> target;
   target = source;
-  EXPECT_OK(target.status());
+  EXPECT_THAT(target.status(), IsOk());
   EXPECT_EQ(static_cast<const Base2*>(*source), *target);
 }
 
@@ -1505,14 +1398,14 @@ TEST(StatusOr, ValueOrDefault) {
 }
 
 TEST(StatusOr, MoveOnlyValueOrOk) {
-  EXPECT_THAT(absl::StatusOr<std::unique_ptr<int>>(absl::make_unique<int>(0))
-                  .value_or(absl::make_unique<int>(-1)),
+  EXPECT_THAT(absl::StatusOr<std::unique_ptr<int>>(std::make_unique<int>(0))
+                  .value_or(std::make_unique<int>(-1)),
               Pointee(0));
 }
 
 TEST(StatusOr, MoveOnlyValueOrDefault) {
   EXPECT_THAT(absl::StatusOr<std::unique_ptr<int>>(absl::CancelledError())
-                  .value_or(absl::make_unique<int>(-1)),
+                  .value_or(std::make_unique<int>(-1)),
               Pointee(-1));
 }
 
@@ -1875,6 +1768,454 @@ TEST(StatusOr, StatusAssignmentFromTypeConvertibleToStatus) {
 
   EXPECT_FALSE(statusor.ok());
   EXPECT_EQ(statusor.status(), static_cast<absl::Status>(v));
+}
+
+struct PrintTestStruct {
+  friend std::ostream& operator<<(std::ostream& os, const PrintTestStruct&) {
+    return os << "ostream";
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const PrintTestStruct&) {
+    sink.Append("stringify");
+  }
+};
+
+TEST(StatusOr, OkPrinting) {
+  absl::StatusOr<PrintTestStruct> print_me = PrintTestStruct{};
+  std::stringstream stream;
+  stream << print_me;
+  EXPECT_EQ(stream.str(), "ostream");
+  EXPECT_EQ(absl::StrCat(print_me), "stringify");
+}
+
+TEST(StatusOr, ErrorPrinting) {
+  absl::StatusOr<PrintTestStruct> print_me = absl::UnknownError("error");
+  std::stringstream stream;
+  stream << print_me;
+  const auto error_matcher =
+      AllOf(HasSubstr("UNKNOWN"), HasSubstr("error"),
+            AnyOf(AllOf(StartsWith("("), EndsWith(")")),
+                  AllOf(StartsWith("["), EndsWith("]"))));
+  EXPECT_THAT(stream.str(), error_matcher);
+  EXPECT_THAT(absl::StrCat(print_me), error_matcher);
+}
+
+#ifdef ABSL_INTERNAL_HAVE_BUILTIN_LINE_FILE
+#define GET_SOURCE_LOCATION(offset) __builtin_LINE() - offset
+#else
+#define GET_SOURCE_LOCATION(offset) 1
+#endif
+
+template <typename T>
+void CheckSourceLocation(
+    const absl::StatusOr<T>& status_or, std::vector<int> lines = {},
+    absl::SourceLocation loc = absl::SourceLocation::current()) {
+  ASSERT_EQ(status_or.GetSourceLocations().size(), lines.size())
+      << "Size check failed at " << loc.line();
+  for (size_t i = 0; i < lines.size(); ++i) {
+    EXPECT_EQ(absl::string_view(status_or.GetSourceLocations()[i].file_name()),
+              absl::string_view(loc.file_name()))
+        << "File name check failed at " << loc.line();
+    EXPECT_EQ(status_or.GetSourceLocations()[i].line(), lines[i])
+        << "Line check failed at " << loc.line();
+  }
+}
+
+TEST(StatusOr, AddSourceLocation) {
+  constexpr int kMaxIter = 10;
+  {
+    // Status that ignores source location.
+    absl::StatusOr<int> status_ignores_source_location[] = {
+        123, absl::Status(absl::StatusCode::kInternal, "")};
+    for (absl::StatusOr<int>& s : status_ignores_source_location) {
+      for (int i = 0; i < kMaxIter; ++i) {
+        s.AddSourceLocation(absl::SourceLocation::current());
+        s.AddSourceLocation(absl::SourceLocation());
+      }
+      CheckSourceLocation(s);
+    }
+  }
+  {
+    // Default SourceLocation is not added.
+    absl::StatusOr<int> status = absl::Status(
+        absl::StatusCode::kInternal, "foo", absl::SourceLocation::current());
+    int line = GET_SOURCE_LOCATION(1);
+    for (int i = 0; i < kMaxIter; ++i) {
+      status.AddSourceLocation(absl::SourceLocation());
+    }
+    CheckSourceLocation(status, {line});
+  }
+  {
+    // Default SourceLocation is not added.
+    absl::StatusOr<int> status = absl::Status(
+        absl::StatusCode::kInternal, "foo", absl::SourceLocation::current());
+    int line = GET_SOURCE_LOCATION(1);
+    std::vector<int> lines = {line};
+    lines.reserve(1 + kMaxIter);
+    for (int i = 0; i < kMaxIter; ++i) {
+      status.AddSourceLocation(absl::SourceLocation::current());
+      lines.push_back(GET_SOURCE_LOCATION(1));
+    }
+    CheckSourceLocation(status, lines);
+  }
+}
+
+absl::StatusOr<int>&& IsRvalueStatus(absl::StatusOr<int>&& s) {
+  return std::move(s);
+}
+
+TEST(StatusOr, WithSourceLocationMove) {
+  absl::StatusOr<int> original = absl::Status(
+      absl::StatusCode::kInternal, "message", absl::SourceLocation::current());
+  int line = GET_SOURCE_LOCATION(1);
+
+  const absl::StatusOr<int> status_or = IsRvalueStatus(
+      std::move(original).WithSourceLocation(absl::SourceLocation::current()));
+  int line2 = GET_SOURCE_LOCATION(1);
+
+  CheckSourceLocation(status_or, {line, line2});
+  EXPECT_FALSE(status_or.ok());
+}
+
+TEST(StatusOr, WithSourceLocationReturn) {
+  absl::SourceLocation loc1 = absl::SourceLocation::current();
+  int line1 = GET_SOURCE_LOCATION(1);
+  absl::SourceLocation loc2 = absl::SourceLocation::current();
+  int line2 = GET_SOURCE_LOCATION(1);
+
+  const auto return_error = [&loc1]() -> absl::StatusOr<int> {
+    return absl::InvalidArgumentError("I am error", loc1);
+  };
+  const auto return_error_with_source_location =
+      [&return_error, &loc2]() -> absl::StatusOr<int> {
+    return return_error().WithSourceLocation(loc2);
+  };
+
+  absl::StatusOr<int> status_or = return_error_with_source_location();
+  CheckSourceLocation(status_or, {line1, line2});
+  EXPECT_FALSE(status_or.ok());
+}
+
+TEST(StatusOr, SupportsReferenceTypes) {
+  int i = 1;
+  absl::StatusOr<int&> s = i;
+  EXPECT_EQ(&i, &*s);
+  *s = 10;
+  EXPECT_EQ(i, 10);
+}
+
+TEST(StatusOr, ReferenceFromStatus) {
+  int i = 10;
+  absl::StatusOr<int&> s = i;
+  s = absl::InternalError("foo");
+  EXPECT_EQ(s.status().message(), "foo");
+
+  absl::StatusOr<int&> s2 = absl::InternalError("foo2");
+  EXPECT_EQ(s2.status().message(), "foo2");
+}
+
+TEST(StatusOr, SupportReferenceValueConstructor) {
+  int i = 1;
+  absl::StatusOr<int&> s = i;
+  absl::StatusOr<const int&> cs = i;
+  absl::StatusOr<const int&> cs2 = std::move(i);  // `T&&` to `const T&` is ok.
+
+  EXPECT_EQ(&i, &*s);
+  EXPECT_EQ(&i, &*cs);
+
+  Derived d;
+  absl::StatusOr<const Base1&> b = d;
+  EXPECT_EQ(&d, &*b);
+
+  // We disallow constructions that cause temporaries.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const int&>, double>));
+  EXPECT_FALSE(
+      (std::is_constructible_v<absl::StatusOr<const int&>, const double&>));
+  EXPECT_FALSE(
+      (std::is_constructible_v<absl::StatusOr<const absl::string_view&>,
+                               std::string>));
+
+  // We disallow constructions with wrong reference.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<int&>, int&&>));
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<int&>, const int&>));
+}
+
+TEST(StatusOr, SupportReferenceConvertingConstructor) {
+  int i = 1;
+  absl::StatusOr<int&> s = i;
+  absl::StatusOr<const int&> cs = s;
+
+  EXPECT_EQ(&i, &*s);
+  EXPECT_EQ(&i, &*cs);
+
+  // The other direction is not allowed.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<int&>,
+                                        absl::StatusOr<const int&>>));
+
+  Derived d;
+  absl::StatusOr<const Base1&> b = absl::StatusOr<const Derived&>(d);
+  EXPECT_EQ(&d, &*b);
+
+  // The other direction is not allowed.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const Derived&>,
+                                        absl::StatusOr<const Base1&>>));
+
+  // We disallow conversions that cause temporaries.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const int&>,
+                                        absl::StatusOr<int>>));
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const int&>,
+                                        absl::StatusOr<double>>));
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const int&>,
+                                        absl::StatusOr<const double&>>));
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<const double&>,
+                                        absl::StatusOr<const int&>>));
+  EXPECT_FALSE(
+      (std::is_constructible_v<absl::StatusOr<const absl::string_view&>,
+                               absl::StatusOr<std::string>>));
+
+  // We disallow constructions with wrong reference.
+  EXPECT_FALSE((std::is_constructible_v<absl::StatusOr<int&>,
+                                        absl::StatusOr<const int&>>));
+}
+
+TEST(StatusOr, SupportReferenceValueAssignment) {
+  int i = 1;
+  absl::StatusOr<int&> s = i;
+  absl::StatusOr<const int&> cs;
+  cs = i;
+  absl::StatusOr<const int&> cs2;
+  cs2 = std::move(i);  // `T&&` to `const T&` is ok.
+
+  EXPECT_EQ(&i, &*s);
+  EXPECT_EQ(&i, &*cs);
+
+  Derived d;
+  absl::StatusOr<const Base1&> b;
+  b = d;
+  EXPECT_EQ(&d, &*b);
+
+  // We disallow constructions that cause temporaries.
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const int&>, double>));
+  EXPECT_FALSE(
+      (std::is_assignable_v<absl::StatusOr<const int&>, const double&>));
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const absl::string_view&>,
+                                     std::string>));
+
+  // We disallow constructions with wrong reference.
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<int&>, int&&>));
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<int&>, const int&>));
+}
+
+TEST(StatusOr, SupportReferenceConvertingAssignment) {
+  int i = 1;
+  absl::StatusOr<int&> s;
+  s = i;
+  absl::StatusOr<const int&> cs;
+  cs = s;
+
+  EXPECT_EQ(&i, &*s);
+  EXPECT_EQ(&i, &*cs);
+
+  // The other direction is not allowed.
+  EXPECT_FALSE(
+      (std::is_assignable_v<absl::StatusOr<int&>, absl::StatusOr<const int&>>));
+
+  Derived d;
+  absl::StatusOr<const Base1&> b;
+  b = absl::StatusOr<const Derived&>(d);
+  EXPECT_EQ(&d, &*b);
+
+  // The other direction is not allowed.
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const Derived&>,
+                                     absl::StatusOr<const Base1&>>));
+
+  // We disallow conversions that cause temporaries.
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const int&>,
+                                     absl::StatusOr<const double&>>));
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const int&>,
+                                     absl::StatusOr<double>>));
+  EXPECT_FALSE((std::is_assignable_v<absl::StatusOr<const absl::string_view&>,
+                                     absl::StatusOr<std::string>>));
+
+  // We disallow constructions with wrong reference.
+  EXPECT_FALSE(
+      (std::is_assignable_v<absl::StatusOr<int&>, absl::StatusOr<const int&>>));
+}
+
+TEST(StatusOr, SupportReferenceToNonReferenceConversions) {
+  int i = 17;
+  absl::StatusOr<int&> si = i;
+  absl::StatusOr<float> sf = si;
+  EXPECT_THAT(sf, IsOkAndHolds(17.));
+
+  i = 20;
+  sf = si;
+  EXPECT_THAT(sf, IsOkAndHolds(20.));
+
+  EXPECT_THAT(absl::StatusOr<int64_t>(absl::StatusOr<int&>(i)),
+              IsOkAndHolds(20));
+  EXPECT_THAT(absl::StatusOr<int64_t>(absl::StatusOr<const int&>(i)),
+              IsOkAndHolds(20));
+
+  std::string str = "str";
+  absl::StatusOr<std::string> sos = absl::StatusOr<std::string&>(str);
+  EXPECT_THAT(sos, IsOkAndHolds("str"));
+  str = "str2";
+  EXPECT_THAT(sos, IsOkAndHolds("str"));
+  sos = absl::StatusOr<std::string&>(str);
+  EXPECT_THAT(sos, IsOkAndHolds("str2"));
+
+  absl::StatusOr<absl::string_view> sosv = absl::StatusOr<std::string&>(str);
+  EXPECT_THAT(sosv, IsOkAndHolds("str2"));
+  str = "str3";
+  sosv = absl::StatusOr<std::string&>(str);
+  EXPECT_THAT(sosv, IsOkAndHolds("str3"));
+
+  absl::string_view view = "view";
+  // This way it is constructible, but not convertible because
+  // string_view->string is explicit
+  EXPECT_THAT(
+      absl::StatusOr<std::string>(absl::StatusOr<absl::string_view&>(view)),
+      IsOkAndHolds("view"));
+#if defined(ABSL_USES_STD_STRING_VIEW)
+  // The assignment doesn't work with normal absl::string_view because
+  // std::string doesn't know about it.
+  sos = absl::StatusOr<absl::string_view&>(view);
+  EXPECT_THAT(sos, IsOkAndHolds("view"));
+#endif
+
+  EXPECT_FALSE((std::is_convertible_v<absl::StatusOr<absl::string_view&>,
+                                      absl::StatusOr<std::string>>));
+}
+
+TEST(StatusOr, ReferenceOperatorStarAndArrow) {
+  std::string str = "Foo";
+  absl::StatusOr<std::string&> s = str;
+  s->assign("Bar");
+  EXPECT_EQ(str, "Bar");
+
+  *s = "Baz";
+  EXPECT_EQ(str, "Baz");
+
+  const absl::StatusOr<std::string&> cs = str;
+  // Even if the StatusOr is const, the reference it gives is non-const so we
+  // can still assign.
+  *cs = "Finally";
+  EXPECT_EQ(str, "Finally");
+
+  cs->clear();
+  EXPECT_EQ(cs.value(), str);
+  EXPECT_EQ(str, "");
+}
+
+TEST(StatusOr, ReferenceValueOr) {
+  int i = 17;
+  absl::StatusOr<int&> si = i;
+
+  int other = 20;
+  EXPECT_EQ(&i, &si.value_or(other));
+
+  si = absl::UnknownError("");
+  EXPECT_EQ(&other, &si.value_or(other));
+
+  absl::StatusOr<const int&> csi = i;
+  EXPECT_EQ(&i, &csi.value_or(1));
+
+  const auto value_or_call = [](auto&& sor, auto&& v)
+      -> decltype(std::forward<decltype(sor)>(sor).value_or(
+          std::forward<decltype(v)>(v))) {};
+  using Probe = decltype(value_or_call);
+  // Just to verify that Probe works as expected in the good cases.
+  EXPECT_TRUE((std::is_invocable_v<Probe, absl::StatusOr<const int&>, int&&>));
+  // Causes temporary conversion.
+  EXPECT_FALSE(
+      (std::is_invocable_v<Probe, absl::StatusOr<const int&>, double&&>));
+  // Const invalid.
+  EXPECT_FALSE((std::is_invocable_v<Probe, absl::StatusOr<int&>, const int&>));
+}
+
+TEST(StatusOr, ReferenceAssignmentFromStatusOr) {
+  std::vector<int> v = {1, 2, 3};
+  absl::StatusOr<int&> si = v[0];
+  absl::StatusOr<int&> si2 = v[1];
+
+  EXPECT_THAT(v, ElementsAre(1, 2, 3));
+  EXPECT_THAT(si, IsOkAndHolds(1));
+  EXPECT_THAT(si2, IsOkAndHolds(2));
+
+  // This rebinds the reference.
+  si = si2;
+  EXPECT_THAT(v, ElementsAre(1, 2, 3));
+  EXPECT_THAT(si, IsOkAndHolds(2));
+  EXPECT_THAT(si2, IsOkAndHolds(2));
+  EXPECT_EQ(&*si, &*si2);
+}
+
+TEST(StatusOr, ReferenceAssignFromReference) {
+  std::vector<int> v = {1, 2, 3};
+  absl::StatusOr<int&> si = v[0];
+
+  EXPECT_THAT(v, ElementsAre(1, 2, 3));
+  EXPECT_THAT(si, IsOkAndHolds(1));
+
+  // This rebinds the reference.
+  si = v[2];
+  EXPECT_THAT(v, ElementsAre(1, 2, 3));
+  EXPECT_THAT(si, IsOkAndHolds(3));
+  EXPECT_EQ(&*si, &v[2]);
+}
+
+TEST(StatusOr, ReferenceIsNotLifetimeBoundForStarValue) {
+  int i = 0;
+
+  // op*/value should not be LIFETIME_BOUND because the ref is not limited to
+  // the lifetime of the StatusOr.
+  int& r = *absl::StatusOr<int&>(i);
+  EXPECT_EQ(&r, &i);
+  int& r2 = absl::StatusOr<int&>(i).value();
+  EXPECT_EQ(&r2, &i);
+
+  struct S {
+    int i;
+  };
+  S s;
+  // op-> should also not be LIFETIME_BOUND for refs.
+  int& r3 = absl::StatusOr<S&>(s)->i;
+  EXPECT_EQ(&r3, &s.i);
+}
+
+template <typename Expected, typename T>
+void TestReferenceDeref() {
+  static_assert(std::is_same_v<Expected, decltype(*std::declval<T>())>);
+  static_assert(std::is_same_v<Expected, decltype(std::declval<T>().value())>);
+}
+
+TEST(StatusOr, ReferenceTypeIsMaintainedOnDeref) {
+  TestReferenceDeref<int&, absl::StatusOr<int&>&>();
+  TestReferenceDeref<int&, absl::StatusOr<int&>&&>();
+  TestReferenceDeref<int&, const absl::StatusOr<int&>&>();
+  TestReferenceDeref<int&, const absl::StatusOr<int&>&&>();
+
+  TestReferenceDeref<const int&, absl::StatusOr<const int&>&>();
+  TestReferenceDeref<const int&, absl::StatusOr<const int&>&&>();
+  TestReferenceDeref<const int&, const absl::StatusOr<const int&>&>();
+  TestReferenceDeref<const int&, const absl::StatusOr<const int&>&&>();
+
+  struct Struct {
+    int value;
+  };
+  EXPECT_TRUE(
+      (std::is_same_v<
+          int&, decltype((std::declval<absl::StatusOr<Struct&>>()->value))>));
+  EXPECT_TRUE(
+      (std::is_same_v<
+          int&,
+          decltype((std::declval<const absl::StatusOr<Struct&>>()->value))>));
+  EXPECT_TRUE(
+      (std::is_same_v<
+          const int&,
+          decltype((std::declval<absl::StatusOr<const Struct&>>()->value))>));
 }
 
 }  // namespace

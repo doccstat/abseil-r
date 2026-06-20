@@ -42,6 +42,7 @@ absl_cc_library(
     absl::config
     absl::core_headers
     absl::dynamic_annotations
+    absl::malloc_internal
     absl::raw_logging_internal
   PUBLIC
 )
@@ -55,7 +56,10 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::stacktrace
+    absl::config
     absl::core_headers
+    absl::errno_saver
+    absl::span
     GTest::gmock_main
 )
 
@@ -103,12 +107,15 @@ absl_cc_test(
   DEPS
     absl::base
     absl::check
+    absl::cleanup
     absl::config
     absl::core_headers
     absl::log
+    absl::malloc_internal
     absl::memory
     absl::stack_consumption
     absl::strings
+    absl::str_format
     absl::symbolize
     GTest::gmock
 )
@@ -174,6 +181,7 @@ absl_cc_library(
     debugging_internal
   HDRS
     "internal/address_is_readable.h"
+    "internal/addresses.h"
     "internal/elf_mem_image.h"
     "internal/vdso_support.h"
   SRCS
@@ -201,8 +209,8 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    absl::config
+    absl::demangle_rust
   PUBLIC
 )
 
@@ -220,6 +228,118 @@ absl_cc_test(
     absl::core_headers
     absl::log
     absl::memory
+    GTest::gmock_main
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    bounded_utf8_length_sequence
+  HDRS
+    "internal/bounded_utf8_length_sequence.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::bits
+    absl::config
+)
+
+absl_cc_test(
+  NAME
+    bounded_utf8_length_sequence_test
+  SRCS
+    "internal/bounded_utf8_length_sequence_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::bounded_utf8_length_sequence
+    absl::config
+    GTest::gmock_main
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    decode_rust_punycode
+  HDRS
+    "internal/decode_rust_punycode.h"
+  SRCS
+    "internal/decode_rust_punycode.cc"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::bounded_utf8_length_sequence
+    absl::config
+    absl::nullability
+    absl::utf8_for_code_point
+)
+
+absl_cc_test(
+  NAME
+    decode_rust_punycode_test
+  SRCS
+    "internal/decode_rust_punycode_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::decode_rust_punycode
+    absl::config
+    GTest::gmock_main
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    demangle_rust
+  HDRS
+    "internal/demangle_rust.h"
+  SRCS
+    "internal/demangle_rust.cc"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::config
+    absl::core_headers
+    absl::decode_rust_punycode
+)
+
+absl_cc_test(
+  NAME
+    demangle_rust_test
+  SRCS
+    "internal/demangle_rust_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::demangle_rust
+    absl::config
+    GTest::gmock_main
+)
+
+# Internal-only target, do not depend on directly.
+absl_cc_library(
+  NAME
+    utf8_for_code_point
+  HDRS
+    "internal/utf8_for_code_point.h"
+  SRCS
+    "internal/utf8_for_code_point.cc"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::config
+)
+
+absl_cc_test(
+  NAME
+    utf8_for_code_point_test
+  SRCS
+    "internal/utf8_for_code_point_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::utf8_for_code_point
+    absl::config
     GTest::gmock_main
 )
 

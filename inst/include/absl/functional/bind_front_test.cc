@@ -169,11 +169,11 @@ int Sink(std::unique_ptr<int> p) {
   return *p;
 }
 
-std::unique_ptr<int> Factory(int n) { return absl::make_unique<int>(n); }
+std::unique_ptr<int> Factory(int n) { return std::make_unique<int>(n); }
 
 TEST(BindTest, NonCopyableArg) {
-  EXPECT_EQ(42, absl::bind_front(Sink)(absl::make_unique<int>(42)));
-  EXPECT_EQ(42, absl::bind_front(Sink, absl::make_unique<int>(42))());
+  EXPECT_EQ(42, absl::bind_front(Sink)(std::make_unique<int>(42)));
+  EXPECT_EQ(42, absl::bind_front(Sink, std::make_unique<int>(42))());
 }
 
 TEST(BindTest, NonCopyableResult) {
@@ -196,7 +196,7 @@ int GetMember(FalseCopyable<std::unique_ptr<int>> x) { return *x.m; }
 
 TEST(BindTest, WrappedMoveOnly) {
   FalseCopyable<std::unique_ptr<int>> x;
-  x.m = absl::make_unique<int>(42);
+  x.m = std::make_unique<int>(42);
   auto f = absl::bind_front(&GetMember, std::move(x));
   EXPECT_EQ(42, std::move(f)());
 }
@@ -210,13 +210,9 @@ TEST(BindTest, ConstExpr) {
   constexpr auto plus5 = absl::bind_front(Plus, five);
   EXPECT_EQ(plus5(1), 6);
 
-  // There seems to be a bug in MSVC dealing constexpr construction of
-  // char[]. Notice 'plus5' above; 'int' works just fine.
-#if !(defined(_MSC_VER) && _MSC_VER < 1910)
   static constexpr char data[] = "DEF";
   constexpr auto g = absl::bind_front(CharAt, data);
   EXPECT_EQ(g(1), 'E');
-#endif
 }
 
 struct ManglingCall {

@@ -14,6 +14,9 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -21,11 +24,35 @@ load(
     "ABSL_TEST_COPTS",
 )
 
-package(default_visibility = [
-    "//absl/log:__pkg__",
-])
+package(
+    default_visibility = [
+        ":internal_users",
+    ],
+    features = [
+        "header_modules",
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
+
+package_group(
+    name = "internal_users",
+    includes = [
+        "//absl:friends",
+    ],
+    packages = [
+        "//absl/log",
+    ],
+)
+
+package_group(
+    name = "structured_proto_users",
+    packages = [
+        "//absl/log/...",
+    ],
+)
 
 cc_library(
     name = "check_impl",
@@ -35,7 +62,6 @@ cc_library(
     deps = [
         ":check_op",
         ":conditions",
-        ":log_message",
         ":strip",
         "//absl/base:core_headers",
     ],
@@ -47,16 +73,18 @@ cc_library(
     hdrs = ["check_op.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
-    visibility = [
-        "//absl/log:__pkg__",
-    ],
+    visibility = ["//absl/log:__pkg__"],
     deps = [
         ":nullguard",
         ":nullstream",
         ":strip",
+        "//absl/base",
         "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:nullability",
+        "//absl/debugging:leak_check",
         "//absl/strings",
+        "//absl/strings:has_ostream_operator",
     ],
 )
 
@@ -80,6 +108,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/log:__pkg__",
     ],
     deps = [
@@ -93,6 +122,11 @@ cc_library(
     hdrs = ["flags.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        ":internal_users",
+        "//absl:friends",
+        "//absl/status:__pkg__",
+    ],
     deps = [
         "//absl/flags:flag",
     ],
@@ -125,6 +159,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/log:__pkg__",
     ],
     deps = [
@@ -146,6 +181,7 @@ cc_library(
         ":conditions",
         ":log_message",
         ":strip",
+        "//absl/log:absl_vlog_is_on",
     ],
 )
 
@@ -156,6 +192,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/log:__pkg__",
     ],
     deps = [
@@ -165,11 +202,13 @@ cc_library(
         ":log_sink_set",
         ":nullguard",
         ":proto",
+        ":structured_proto",
         "//absl/base",
         "//absl/base:config",
         "//absl/base:core_headers",
         "//absl/base:errno_saver",
         "//absl/base:log_severity",
+        "//absl/base:nullability",
         "//absl/base:raw_logging_internal",
         "//absl/base:strerror",
         "//absl/container:inlined_vector",
@@ -180,7 +219,9 @@ cc_library(
         "//absl/log:log_sink_registry",
         "//absl/memory",
         "//absl/strings",
+        "//absl/strings:internal",
         "//absl/time",
+        "//absl/types:source_location",
         "//absl/types:span",
     ],
 )
@@ -193,6 +234,7 @@ cc_library(
     deps = [
         "//absl/base:config",
         "//absl/strings",
+        "//absl/strings:internal",
         "//absl/types:span",
     ],
 )
@@ -213,6 +255,7 @@ cc_library(
         "//absl/base:config",
         "//absl/base:core_headers",
         "//absl/base:log_severity",
+        "//absl/base:no_destructor",
         "//absl/base:raw_logging_internal",
         "//absl/cleanup",
         "//absl/log:globals",
@@ -257,6 +300,7 @@ cc_library(
     deps = [
         ":log_message",
         ":nullstream",
+        "//absl/base:core_headers",
         "//absl/base:log_severity",
     ],
 )
@@ -266,10 +310,49 @@ cc_library(
     hdrs = ["structured.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        ":internal_users",
+        ":structured_proto_users",
+    ],
     deps = [
         ":log_message",
+        ":structured_proto",
+        "//absl/base:config",
+        "//absl/base:core_headers",
+        "//absl/functional:any_invocable",
+        "//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "structured_proto",
+    srcs = ["structured_proto.cc"],
+    hdrs = ["structured_proto.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        ":structured_proto_users",
+    ],
+    deps = [
+        ":proto",
         "//absl/base:config",
         "//absl/strings",
+        "//absl/types:span",
+        "//absl/types:variant",
+    ],
+)
+
+cc_test(
+    name = "structured_proto_test",
+    srcs = ["structured_proto_test.cc"],
+    deps = [
+        ":structured_proto",
+        "//absl/base:config",
+        "//absl/strings:string_view",
+        "//absl/types:span",
+        "//absl/utility",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -288,7 +371,7 @@ cc_library(
         "//absl/strings",
         "//absl/time",
     ] + select({
-        "//absl:msvc_compiler": [],
+        "@rules_cc//cc/compiler:msvc-cl": [],
         "//conditions:default": [
         ],
     }),
@@ -301,13 +384,17 @@ cc_library(
     hdrs = ["test_helpers.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        ":internal_users",
+        ":structured_proto_users",
+    ],
     deps = [
         ":globals",
         "//absl/base:config",
         "//absl/base:log_severity",
         "//absl/log:globals",
         "//absl/log:initialize",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
     ],
 )
 
@@ -318,6 +405,10 @@ cc_library(
     hdrs = ["test_matchers.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        ":internal_users",
+        ":structured_proto_users",
+    ],
     deps = [
         ":test_helpers",
         "//absl/base:config",
@@ -326,9 +417,9 @@ cc_library(
         "//absl/log:log_entry",
         "//absl/strings",
         "//absl/time",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
     ] + select({
-        "//absl:msvc_compiler": [],
+        "@rules_cc//cc/compiler:msvc-cl": [],
         "//conditions:default": [
         ],
     }),
@@ -339,7 +430,10 @@ cc_library(
     hdrs = ["voidify.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
-    deps = ["//absl/base:config"],
+    deps = [
+        "//absl/base:config",
+        "//absl/base:core_headers",
+    ],
 )
 
 cc_library(
@@ -357,10 +451,69 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "fnmatch",
+    srcs = ["fnmatch.cc"],
+    hdrs = ["fnmatch.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        "//absl/base:config",
+        "//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "vlog_config",
+    srcs = ["vlog_config.cc"],
+    hdrs = ["vlog_config.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        "//absl:friends",
+        "//absl/log:__subpackages__",
+        "//absl/status:__pkg__",
+    ],
+    deps = [
+        ":fnmatch",
+        "//absl/base",
+        "//absl/base:config",
+        "//absl/base:core_headers",
+        "//absl/base:no_destructor",
+        "//absl/base:nullability",
+        "//absl/memory",
+        "//absl/strings",
+        "//absl/synchronization",
+    ],
+)
+
+cc_binary(
+    name = "vlog_config_benchmark",
+    testonly = True,
+    srcs = ["vlog_config_benchmark.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    tags = [
+        "benchmark",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":vlog_config",
+        "//absl/base:config",
+        "//absl/base:core_headers",
+        "//absl/container:layout",
+        "//absl/memory",
+        "//absl/random:distributions",
+        "//absl/strings",
+        "@google_benchmark//:benchmark_main",
+    ],
+)
+
 # Test targets
 cc_test(
     name = "stderr_log_sink_test",
     size = "small",
+    timeout = "moderate",
     srcs = ["stderr_log_sink_test.cc"],
     copts = ABSL_TEST_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
@@ -368,7 +521,9 @@ cc_test(
         "no_test:os:android",
         "no_test:os:ios",
         "no_test_android",
+        "no_test_darwin_arm64",
         "no_test_darwin_x86_64",
+        "no_test_fuchsia_x64",
         "no_test_ios",
         "no_test_wasm",
     ],
@@ -378,6 +533,63 @@ cc_test(
         "//absl/base:log_severity",
         "//absl/log",
         "//absl/log:globals",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "fnmatch_test",
+    srcs = ["fnmatch_test.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":fnmatch",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "fnmatch_benchmark",
+    srcs = ["fnmatch_benchmark.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    tags = ["benchmark"],
+    deps = [
+        ":fnmatch",
+        "@google_benchmark//:benchmark_main",
+    ],
+)
+
+cc_library(
+    name = "container",
+    hdrs = ["container.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = [
+        "//absl:__subpackages__",
+        "//absl:friends",
+    ],
+    deps = [
+        "//absl/base:config",
+        "//absl/meta:requires",
+        "//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "container_test",
+    srcs = ["container_test.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":container",
+        "//absl/base:config",
+        "//absl/strings",
+        "//absl/strings:str_format",
+        "//absl/types:span",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

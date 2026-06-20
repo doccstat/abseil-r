@@ -15,13 +15,17 @@
 #include "absl/functional/any_invocable.h"
 
 #include <cstddef>
+#include <cstdlib>
+#include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <numeric>
 #include <type_traits>
 
 #include "gtest/gtest.h"
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
 
@@ -31,22 +35,13 @@ static_assert(absl::internal_any_invocable::kStorageSize >= sizeof(void*),
 
 namespace {
 
-// Helper macro used to avoid spelling `noexcept` in language versions older
-// than C++17, where it is not part of the type system, in order to avoid
-// compilation failures and internal compiler errors.
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
-#define ABSL_INTERNAL_NOEXCEPT_SPEC(noex) noexcept(noex)
-#else
-#define ABSL_INTERNAL_NOEXCEPT_SPEC(noex)
-#endif
-
 // A dummy type we use when passing qualifiers to metafunctions
 struct _ {};
 
 template <class T>
 struct Wrapper {
   template <class U,
-            class = absl::enable_if_t<std::is_convertible<U, T>::value>>
+            class = std::enable_if_t<std::is_convertible<U, T>::value>>
   Wrapper(U&&);  // NOLINT
 };
 
@@ -63,7 +58,7 @@ template <class Qualifiers, class This>
 struct QualifiersForThisImpl {
   static_assert(std::is_object<This>::value, "");
   using type =
-      absl::conditional_t<std::is_const<Qualifiers>::value, const This, This>&;
+      std::conditional_t<std::is_const<Qualifiers>::value, const This, This>&;
 };
 
 template <class Qualifiers, class This>
@@ -74,7 +69,7 @@ template <class Qualifiers, class This>
 struct QualifiersForThisImpl<Qualifiers&&, This> {
   static_assert(std::is_object<This>::value, "");
   using type =
-      absl::conditional_t<std::is_const<Qualifiers>::value, const This, This>&&;
+      std::conditional_t<std::is_const<Qualifiers>::value, const This, This>&&;
 };
 
 template <class Qualifiers, class This>
@@ -89,45 +84,39 @@ struct GiveQualifiersToFunImpl;
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T, R(P...)> {
   using type =
-      absl::conditional_t<std::is_const<T>::value, R(P...) const, R(P...)>;
+      std::conditional_t<std::is_const<T>::value, R(P...) const, R(P...)>;
 };
 
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T&, R(P...)> {
   using type =
-      absl::conditional_t<std::is_const<T>::value, R(P...) const&, R(P...)&>;
+      std::conditional_t<std::is_const<T>::value, R(P...) const&, R(P...) &>;
 };
 
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T&&, R(P...)> {
   using type =
-      absl::conditional_t<std::is_const<T>::value, R(P...) const&&, R(P...) &&>;
+      std::conditional_t<std::is_const<T>::value, R(P...) const&&, R(P...) &&>;
 };
-
-// If noexcept is a part of the type system, then provide the noexcept forms.
-#if defined(__cpp_noexcept_function_type)
 
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T, R(P...) noexcept> {
-  using type = absl::conditional_t<std::is_const<T>::value,
-                                   R(P...) const noexcept, R(P...) noexcept>;
+  using type = std::conditional_t<std::is_const<T>::value,
+                                  R(P...) const noexcept, R(P...) noexcept>;
 };
 
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T&, R(P...) noexcept> {
-  using type =
-      absl::conditional_t<std::is_const<T>::value, R(P...) const & noexcept,
-                          R(P...) & noexcept>;
+  using type = std::conditional_t<std::is_const<T>::value,
+                                  R(P...) const & noexcept, R(P...) & noexcept>;
 };
 
 template <class T, class R, class... P>
 struct GiveQualifiersToFunImpl<T&&, R(P...) noexcept> {
   using type =
-      absl::conditional_t<std::is_const<T>::value, R(P...) const && noexcept,
-                          R(P...) && noexcept>;
+      std::conditional_t<std::is_const<T>::value, R(P...) const && noexcept,
+                         R(P...) && noexcept>;
 };
-
-#endif  // defined(__cpp_noexcept_function_type)
 
 template <class T, class Fun>
 using GiveQualifiersToFun = typename GiveQualifiersToFunImpl<T, Fun>::type;
@@ -200,7 +189,7 @@ struct add;
                 tail) {}                                                      \
     add(add&& other) = default; /*NOLINT*/                                    \
     Int operator()(int a, int b, int c) qual                                  \
-        ABSL_INTERNAL_NOEXCEPT_SPEC(CallExceptionSpec == NothrowCall::yes) {  \
+        noexcept(CallExceptionSpec == NothrowCall::yes) {                     \
       return state + a + b + c;                                               \
     }                                                                         \
     int state;                                                                \
@@ -218,7 +207,7 @@ struct add;
     ~add() noexcept {}                                                        \
     add(add&& other) = default; /*NOLINT*/                                    \
     Int operator()(int a, int b, int c) qual                                  \
-        ABSL_INTERNAL_NOEXCEPT_SPEC(CallExceptionSpec == NothrowCall::yes) {  \
+        noexcept(CallExceptionSpec == NothrowCall::yes) {                     \
       return state + a + b + c;                                               \
     }                                                                         \
     int state;                                                                \
@@ -322,8 +311,8 @@ struct TestParams {
   static constexpr ObjAlign kAlignment = Alignment;
 
   // These types are used when testing with member object pointer Invocables
-  using UnqualifiedUnaryFunType = int(Int const&&)
-      ABSL_INTERNAL_NOEXCEPT_SPEC(CallExceptionSpec == NothrowCall::yes);
+  using UnqualifiedUnaryFunType = int(Int const&&) noexcept(CallExceptionSpec ==
+                                                            NothrowCall::yes);
   using UnaryFunType = GiveQualifiersToFun<Qualifiers, UnqualifiedUnaryFunType>;
   using MemObjPtrType = int(Int::*);
   using UnaryAnyInvType = AnyInvocable<UnaryFunType>;
@@ -377,16 +366,16 @@ struct TestParams {
   }
 
   using CompatibleAnyInvocableFunType =
-      absl::conditional_t<std::is_rvalue_reference<Qual>::value,
-                          GiveQualifiersToFun<const _&&, UnqualifiedFunType>,
-                          GiveQualifiersToFun<const _&, UnqualifiedFunType>>;
+      std::conditional_t<std::is_rvalue_reference<Qual>::value,
+                         GiveQualifiersToFun<const _&&, UnqualifiedFunType>,
+                         GiveQualifiersToFun<const _&, UnqualifiedFunType>>;
 
   using CompatibleAnyInvType = AnyInvocable<CompatibleAnyInvocableFunType>;
 
   using IncompatibleInvocable =
-      absl::conditional_t<std::is_rvalue_reference<Qual>::value,
-                          GiveQualifiersToFun<_&, UnqualifiedFunType>(_::*),
-                          GiveQualifiersToFun<_&&, UnqualifiedFunType>(_::*)>;
+      std::conditional_t<std::is_rvalue_reference<Qual>::value,
+                         GiveQualifiersToFun<_&, UnqualifiedFunType>(_::*),
+                         GiveQualifiersToFun<_&&, UnqualifiedFunType>(_::*)>;
 };
 
 // Given a member-pointer type, this metafunction yields the target type of the
@@ -411,7 +400,7 @@ struct IsMemberSwappableImpl : std::false_type {
 
 template <class T>
 struct IsMemberSwappableImpl<
-    T, absl::void_t<decltype(std::declval<T&>().swap(std::declval<T&>()))>>
+    T, std::void_t<decltype(std::declval<T&>().swap(std::declval<T&>()))>>
     : std::true_type {
   static constexpr bool kIsNothrow =
       noexcept(std::declval<T&>().swap(std::declval<T&>()));
@@ -578,7 +567,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceConstruction) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType fun(absl::in_place_type<AddType>, 5);
+  AnyInvType fun(std::in_place_type<AddType>, 5);
 
   EXPECT_TRUE(static_cast<bool>(fun));
   EXPECT_EQ(29, TypeParam::ToThisParam(fun)(7, 8, 9).value);
@@ -588,7 +577,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceConstructionInitializerList) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType fun(absl::in_place_type<AddType>, {1, 2, 3, 4}, 5);
+  AnyInvType fun(std::in_place_type<AddType>, {1, 2, 3, 4}, 5);
 
   EXPECT_TRUE(static_cast<bool>(fun));
   EXPECT_EQ(39, TypeParam::ToThisParam(fun)(7, 8, 9).value);
@@ -598,7 +587,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullFunPtrConstruction) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using UnqualifiedFunType = typename TypeParam::UnqualifiedFunType;
 
-  AnyInvType fun(absl::in_place_type<UnqualifiedFunType*>, nullptr);
+  AnyInvType fun(std::in_place_type<UnqualifiedFunType*>, nullptr);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -608,7 +597,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullFunPtrConstructionValueInit) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using UnqualifiedFunType = typename TypeParam::UnqualifiedFunType;
 
-  AnyInvType fun(absl::in_place_type<UnqualifiedFunType*>);
+  AnyInvType fun(std::in_place_type<UnqualifiedFunType*>);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -618,7 +607,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullMemFunPtrConstruction) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using MemFunPtrType = typename TypeParam::MemFunPtrType;
 
-  AnyInvType fun(absl::in_place_type<MemFunPtrType>, nullptr);
+  AnyInvType fun(std::in_place_type<MemFunPtrType>, nullptr);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -628,7 +617,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullMemFunPtrConstructionValueInit) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using MemFunPtrType = typename TypeParam::MemFunPtrType;
 
-  AnyInvType fun(absl::in_place_type<MemFunPtrType>);
+  AnyInvType fun(std::in_place_type<MemFunPtrType>);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -638,7 +627,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullMemObjPtrConstruction) {
   using UnaryAnyInvType = typename TypeParam::UnaryAnyInvType;
   using MemObjPtrType = typename TypeParam::MemObjPtrType;
 
-  UnaryAnyInvType fun(absl::in_place_type<MemObjPtrType>, nullptr);
+  UnaryAnyInvType fun(std::in_place_type<MemObjPtrType>, nullptr);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -648,7 +637,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceNullMemObjPtrConstructionValueInit) {
   using UnaryAnyInvType = typename TypeParam::UnaryAnyInvType;
   using MemObjPtrType = typename TypeParam::MemObjPtrType;
 
-  UnaryAnyInvType fun(absl::in_place_type<MemObjPtrType>);
+  UnaryAnyInvType fun(std::in_place_type<MemObjPtrType>);
 
   // In-place construction does not lead to empty.
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -658,7 +647,7 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceVoidCovarianceConstruction) {
   using VoidAnyInvType = typename TypeParam::VoidAnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  VoidAnyInvType fun(absl::in_place_type<AddType>, 5);
+  VoidAnyInvType fun(std::in_place_type<AddType>, 5);
 
   EXPECT_TRUE(static_cast<bool>(fun));
 }
@@ -666,8 +655,8 @@ TYPED_TEST_P(AnyInvTestBasic, InPlaceVoidCovarianceConstruction) {
 TYPED_TEST_P(AnyInvTestBasic, MoveConstructionFromEmpty) {
   using AnyInvType = typename TypeParam::AnyInvType;
 
-  AnyInvType source_fun;
-  AnyInvType fun(std::move(source_fun));
+  absl_nullable AnyInvType source_fun;
+  absl_nullable AnyInvType fun(std::move(source_fun));
 
   EXPECT_FALSE(static_cast<bool>(fun));
 
@@ -678,7 +667,7 @@ TYPED_TEST_P(AnyInvTestBasic, MoveConstructionFromNonEmpty) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType source_fun(absl::in_place_type<AddType>, 5);
+  AnyInvType source_fun(std::in_place_type<AddType>, 5);
   AnyInvType fun(std::move(source_fun));
 
   EXPECT_TRUE(static_cast<bool>(fun));
@@ -703,7 +692,7 @@ TYPED_TEST_P(AnyInvTestBasic, ComparisonWithNullptrNonempty) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType fun(absl::in_place_type<AddType>, 5);
+  AnyInvType fun(std::in_place_type<AddType>, 5);
 
   EXPECT_FALSE(fun == nullptr);
   EXPECT_FALSE(nullptr == fun);
@@ -740,7 +729,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, MoveAssignEmptyLhsNonemptyRhs) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType source_fun(absl::in_place_type<AddType>, 5);
+  AnyInvType source_fun(std::in_place_type<AddType>, 5);
   AnyInvType fun;
 
   fun = std::move(source_fun);
@@ -754,7 +743,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, MoveAssignNonemptyEmptyLhsRhs) {
   using AddType = typename TypeParam::AddType;
 
   AnyInvType source_fun;
-  AnyInvType fun(absl::in_place_type<AddType>, 5);
+  AnyInvType fun(std::in_place_type<AddType>, 5);
 
   fun = std::move(source_fun);
 
@@ -765,8 +754,8 @@ TYPED_TEST_P(AnyInvTestCombinatoric, MoveAssignNonemptyLhsNonemptyRhs) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType source_fun(absl::in_place_type<AddType>, 5);
-  AnyInvType fun(absl::in_place_type<AddType>, 20);
+  AnyInvType source_fun(std::in_place_type<AddType>, 5);
+  AnyInvType fun(std::in_place_type<AddType>, 20);
 
   fun = std::move(source_fun);
 
@@ -787,7 +776,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SelfMoveAssignNonempty) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType source_fun(absl::in_place_type<AddType>, 5);
+  AnyInvType source_fun(std::in_place_type<AddType>, 5);
   source_fun = std::move(source_fun);
 
   // This space intentionally left blank.
@@ -1038,7 +1027,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapEmptyLhsNonemptyRhs) {
   // Swap idiom
   {
     AnyInvType fun;
-    AnyInvType other(absl::in_place_type<AddType>, 5);
+    AnyInvType other(std::in_place_type<AddType>, 5);
 
     using std::swap;
     swap(fun, other);
@@ -1055,7 +1044,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapEmptyLhsNonemptyRhs) {
   // Member swap
   {
     AnyInvType fun;
-    AnyInvType other(absl::in_place_type<AddType>, 5);
+    AnyInvType other(std::in_place_type<AddType>, 5);
 
     fun.swap(other);
 
@@ -1074,7 +1063,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsEmptyRhs) {
 
   // Swap idiom
   {
-    AnyInvType fun(absl::in_place_type<AddType>, 5);
+    AnyInvType fun(std::in_place_type<AddType>, 5);
     AnyInvType other;
 
     using std::swap;
@@ -1091,7 +1080,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsEmptyRhs) {
 
   // Member swap
   {
-    AnyInvType fun(absl::in_place_type<AddType>, 5);
+    AnyInvType fun(std::in_place_type<AddType>, 5);
     AnyInvType other;
 
     fun.swap(other);
@@ -1111,8 +1100,8 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsNonemptyRhs) {
 
   // Swap idiom
   {
-    AnyInvType fun(absl::in_place_type<AddType>, 5);
-    AnyInvType other(absl::in_place_type<AddType>, 6);
+    AnyInvType fun(std::in_place_type<AddType>, 5);
+    AnyInvType other(std::in_place_type<AddType>, 6);
 
     using std::swap;
     swap(fun, other);
@@ -1129,8 +1118,8 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsNonemptyRhs) {
 
   // Member swap
   {
-    AnyInvType fun(absl::in_place_type<AddType>, 5);
-    AnyInvType other(absl::in_place_type<AddType>, 6);
+    AnyInvType fun(std::in_place_type<AddType>, 5);
+    AnyInvType other(std::in_place_type<AddType>, 6);
 
     fun.swap(other);
 
@@ -1233,9 +1222,6 @@ class AnyInvTestNoexceptTrue : public ::testing::Test {};
 TYPED_TEST_SUITE_P(AnyInvTestNoexceptTrue);
 
 TYPED_TEST_P(AnyInvTestNoexceptTrue, ConversionConstructionConstraints) {
-#if ABSL_INTERNAL_CPLUSPLUS_LANG < 201703L
-  GTEST_SKIP() << "Noexcept was not part of the type system before C++17.";
-#else
   using AnyInvType = typename TypeParam::AnyInvType;
 
   EXPECT_FALSE((std::is_constructible<
@@ -1244,13 +1230,9 @@ TYPED_TEST_P(AnyInvTestNoexceptTrue, ConversionConstructionConstraints) {
   EXPECT_FALSE((
       std::is_constructible<AnyInvType,
                             typename TypeParam::IncompatibleInvocable>::value));
-#endif
 }
 
 TYPED_TEST_P(AnyInvTestNoexceptTrue, ConversionAssignConstraints) {
-#if ABSL_INTERNAL_CPLUSPLUS_LANG < 201703L
-  GTEST_SKIP() << "Noexcept was not part of the type system before C++17.";
-#else
   using AnyInvType = typename TypeParam::AnyInvType;
 
   EXPECT_FALSE((std::is_assignable<
@@ -1259,7 +1241,6 @@ TYPED_TEST_P(AnyInvTestNoexceptTrue, ConversionAssignConstraints) {
   EXPECT_FALSE(
       (std::is_assignable<AnyInvType&,
                           typename TypeParam::IncompatibleInvocable>::value));
-#endif
 }
 
 template <class T>
@@ -1283,9 +1264,6 @@ TYPED_TEST_P(AnyInvTestNonRvalue, ConversionConstructionReferenceWrapper) {
 }
 
 TYPED_TEST_P(AnyInvTestNonRvalue, NonMoveableResultType) {
-#if ABSL_INTERNAL_CPLUSPLUS_LANG < 201703L
-  GTEST_SKIP() << "Copy/move elision was not standard before C++17";
-#else
   // Define a result type that cannot be copy- or move-constructed.
   struct Result {
     int x;
@@ -1305,14 +1283,13 @@ TYPED_TEST_P(AnyInvTestNonRvalue, NonMoveableResultType) {
   // Just like plain functors, it should work fine to use an AnyInvocable that
   // returns the non-moveable type.
   using UnqualifiedFun =
-      absl::conditional_t<TypeParam::kIsNoexcept, Result() noexcept, Result()>;
+      std::conditional_t<TypeParam::kIsNoexcept, Result() noexcept, Result()>;
 
   using Fun =
       GiveQualifiersToFun<typename TypeParam::Qualifiers, UnqualifiedFun>;
 
   AnyInvocable<Fun> any_inv(return_17);
   EXPECT_EQ(17, any_inv().x);
-#endif
 }
 
 TYPED_TEST_P(AnyInvTestNonRvalue, ConversionAssignReferenceWrapperEmptyLhs) {
@@ -1367,9 +1344,6 @@ TYPED_TEST_P(AnyInvTestRvalue, ConversionConstructionReferenceWrapper) {
 }
 
 TYPED_TEST_P(AnyInvTestRvalue, NonMoveableResultType) {
-#if ABSL_INTERNAL_CPLUSPLUS_LANG < 201703L
-  GTEST_SKIP() << "Copy/move elision was not standard before C++17";
-#else
   // Define a result type that cannot be copy- or move-constructed.
   struct Result {
     int x;
@@ -1389,13 +1363,12 @@ TYPED_TEST_P(AnyInvTestRvalue, NonMoveableResultType) {
   // Just like plain functors, it should work fine to use an AnyInvocable that
   // returns the non-moveable type.
   using UnqualifiedFun =
-      absl::conditional_t<TypeParam::kIsNoexcept, Result() noexcept, Result()>;
+      std::conditional_t<TypeParam::kIsNoexcept, Result() noexcept, Result()>;
 
   using Fun =
       GiveQualifiersToFun<typename TypeParam::Qualifiers, UnqualifiedFun>;
 
   EXPECT_EQ(17, AnyInvocable<Fun>(return_17)().x);
-#endif
 }
 
 TYPED_TEST_P(AnyInvTestRvalue, ConversionAssignReferenceWrapper) {
@@ -1410,7 +1383,7 @@ TYPED_TEST_P(AnyInvTestRvalue, NonConstCrashesOnSecondCall) {
   using AnyInvType = typename TypeParam::AnyInvType;
   using AddType = typename TypeParam::AddType;
 
-  AnyInvType fun(absl::in_place_type<AddType>, 5);
+  AnyInvType fun(std::in_place_type<AddType>, 5);
 
   EXPECT_TRUE(static_cast<bool>(fun));
   std::move(fun)(7, 8, 9);
@@ -1507,9 +1480,6 @@ using TestParameterListRemoteMovable = ::testing::Types<
     TestParams<Movable::yes, Destructible::nothrow, _, NothrowCall::no,
                ObjSize::large, ObjAlign::normal>  //
 
-// Dynamic memory allocation for over-aligned data was introduced in C++17.
-// See https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
     // Types that must use remote storage because of a large alignment.
     ,
     TestParams<Movable::trivial, Destructible::trivial, _, NothrowCall::no,
@@ -1520,7 +1490,6 @@ using TestParameterListRemoteMovable = ::testing::Types<
                ObjSize::small, ObjAlign::large>,  //
     TestParams<Movable::nothrow, Destructible::nothrow, _, NothrowCall::no,
                ObjSize::small, ObjAlign::large>  //
-#endif
     >;
 using TestParameterListRemoteNonMovable = ::testing::Types<
     // "Normal" aligned types that are large and have trivial destructors
@@ -1713,7 +1682,5 @@ static_assert(
     std::is_convertible<void (*)(), absl::AnyInvocable<void() &&>>::value, "");
 static_assert(!std::is_convertible<void*, absl::AnyInvocable<void() &&>>::value,
               "");
-
-#undef ABSL_INTERNAL_NOEXCEPT_SPEC
 
 }  // namespace

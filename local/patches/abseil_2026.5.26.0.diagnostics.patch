@@ -1,0 +1,525 @@
+--- a/inst/include/absl/container/inlined_vector.h
++++ b/inst/include/absl/container/inlined_vector.h
+@@ -647,13 +647,13 @@
+       // issued. But `pos` is actually only used to compute an array index to
+       // write to.
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+       return storage_.Insert(pos, CopyValueAdapter<A>(std::addressof(dealias)),
+                              n);
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+     } else {
+       return const_cast<iterator>(pos);
+@@ -726,15 +726,15 @@
+     // issued. But `pos` is actually only used to compute an array index to
+     // write to.
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+     return storage_.Insert(pos,
+                            IteratorValueAdapter<A, MoveIterator<A>>(
+                                MoveIterator<A>(std::addressof(dealias))),
+                            1);
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   }
+ 
+@@ -784,13 +784,13 @@
+     // issued. But `pos` is actually only used to compute an array index to
+     // write to.
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+-#pragma GCC diagnostic ignored "-Wuninitialized"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++// #pragma GCC diagnostic ignored "-Wuninitialized"
+ #endif
+     return storage_.Erase(pos, pos + 1);
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   }
+ 
+--- a/inst/include/absl/container/internal/inlined_vector.h
++++ b/inst/include/absl/container/internal/inlined_vector.h
+@@ -40,8 +40,8 @@
+ 
+ // GCC does not deal very well with the below code
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Warray-bounds"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Warray-bounds"
+ #endif
+ 
+ template <typename A>
+@@ -375,12 +375,12 @@
+   Pointer<A> GetAllocatedData() {
+     // GCC 12 has a false-positive -Wmaybe-uninitialized warning here.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+     return data_.allocated.allocated_data;
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   }
+ 
+@@ -1084,7 +1084,7 @@
+ 
+ // End ignore "array-bounds"
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+ }  // namespace inlined_vector_internal
+--- a/inst/include/absl/hash/internal/hash.h
++++ b/inst/include/absl/hash/internal/hash.h
+@@ -1019,8 +1019,8 @@
+ 
+ // Suppress erroneous array bounds errors on GCC.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Warray-bounds"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Warray-bounds"
+ #endif
+ inline uint32_t Read4(const unsigned char* p) {
+   return absl::base_internal::UnalignedLoad32(p);
+@@ -1029,7 +1029,7 @@
+   return absl::base_internal::UnalignedLoad64(p);
+ }
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+ // Reads 9 to 16 bytes from p.
+--- a/inst/include/absl/meta/internal/constexpr_testing.h
++++ b/inst/include/absl/meta/internal/constexpr_testing.h
+@@ -36,8 +36,8 @@
+ namespace internal_constexpr_evaluation {
+ 
+ #ifdef __clang__
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wuninitialized"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wuninitialized"
+ #endif
+ // This will give a constexpr instance of `F`.
+ // This works for captureless lambdas because they have no state and the copy
+@@ -45,7 +45,7 @@
+ template <typename F>
+ constexpr F default_instance = default_instance<F>;
+ #ifdef __clang__
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ 
+ template <typename F>
+--- a/inst/include/absl/strings/internal/charconv_bigint.h
++++ b/inst/include/absl/strings/internal/charconv_bigint.h
+@@ -113,12 +113,12 @@
+ // shows a lot of bogus -Warray-bounds warnings under GCC.
+ // This is not the only one in Abseil.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(14, 0)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Warray-bounds"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Warray-bounds"
+ #endif
+         std::copy_backward(words_, words_ + size_ - word_shift, words_ + size_);
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(14, 0)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+       } else {
+         for (int i = (std::min)(size_, max_words - 1); i > word_shift; --i) {
+--- a/inst/include/absl/base/casts.h
++++ b/inst/include/absl/base/casts.h
+@@ -214,12 +214,12 @@
+ #if !defined(NDEBUG) || (ABSL_OPTION_HARDENED == 1)
+   // Suppress erroneous nonnull comparison warning on older GCC.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wnonnull-compare"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wnonnull-compare"
+ #endif
+   if (ABSL_PREDICT_FALSE(f != nullptr && dynamic_cast<To>(f) == nullptr)) {
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+     absl::base_internal::BadDownCastCrash(
+         typeid(*f).name(), typeid(std::remove_pointer_t<To>).name());
+--- a/inst/include/absl/functional/internal/any_invocable.h
++++ b/inst/include/absl/functional/internal/any_invocable.h
+@@ -426,14 +426,14 @@
+       // std::is_function_v<std::remove_reference_t<F>>, but we choose to ignore
+       // it instead of writing more code.
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wpragmas"
+-#pragma GCC diagnostic ignored "-Waddress"
+-#pragma GCC diagnostic ignored "-Wnonnull-compare"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wpragmas"
++// #pragma GCC diagnostic ignored "-Waddress"
++// #pragma GCC diagnostic ignored "-Wnonnull-compare"
+ #endif
+       if (static_cast<DecayedT>(f) == nullptr) {
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+         manager_ = EmptyManager;
+         invoker_ = nullptr;
+--- a/inst/include/absl/strings/internal/cord_internal.h
++++ b/inst/include/absl/strings/internal/cord_internal.h
+@@ -104,13 +104,13 @@
+     }
+     // GCC 12 has a false-positive -Wstringop-overflow warning here.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wstringop-overflow"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wstringop-overflow"
+ #endif
+     memcpy(dst, &buf1, 8);
+     memcpy(dst + n - 8, &buf2, 8);
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   } else if (n >= 4) {
+     uint32_t buf1;
+--- a/inst/include/absl/strings/internal/cord_rep_flat.h
++++ b/inst/include/absl/strings/internal/cord_rep_flat.h
+@@ -122,13 +122,13 @@
+     void* const raw_rep = ::operator new(size);
+     // GCC 13 has a false-positive -Wstringop-overflow warning here.
+     #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
+-    #pragma GCC diagnostic push
+-    #pragma GCC diagnostic ignored "-Wstringop-overflow"
++//     #pragma GCC diagnostic push
++//     #pragma GCC diagnostic ignored "-Wstringop-overflow"
+     #endif
+     CordRepFlat* rep = new (raw_rep) CordRepFlat();
+     rep->tag = AllocatedSizeToTag(size);
+     #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(13, 0)
+-    #pragma GCC diagnostic pop
++//     #pragma GCC diagnostic pop
+     #endif
+     return rep;
+   }
+--- a/inst/include/absl/types/any_span.h
++++ b/inst/include/absl/types/any_span.h
+@@ -793,8 +793,8 @@
+   size_type size_ = 0;
+ 
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wnon-template-friend"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wnon-template-friend"
+ #endif
+   // The technical reasons we need to declare these friends in this manner are
+   // quite subtle and confusing, but they're necessary on some toolchains to
+@@ -803,7 +803,7 @@
+   friend bool operator==(AnySpan<const T> a, AnySpan<const T> b);
+   friend bool operator!=(AnySpan<const T> a, AnySpan<const T> b);
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+   // operator==
+--- a/inst/include/absl/container/internal/hash_policy_traits.h
++++ b/inst/include/absl/container/internal/hash_policy_traits.h
+@@ -151,15 +151,15 @@
+ // get_hash_slot_fn may return nullptr to signal that non type erased function
+ // should be used. GCC warns against comparing function address with nullptr.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
++// #pragma GCC diagnostic push
+ // silent error: the address of * will never be NULL [-Werror=address]
+-#pragma GCC diagnostic ignored "-Waddress"
++// #pragma GCC diagnostic ignored "-Waddress"
+ #endif
+     return Policy::template get_hash_slot_fn<Hash, kIsDefault>() == nullptr
+                ? &hash_slot_fn_non_type_erased<Hash, kIsDefault>
+                : Policy::template get_hash_slot_fn<Hash, kIsDefault>();
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   }
+ 
+--- a/inst/include/absl/flags/commandlineflag.h
++++ b/inst/include/absl/flags/commandlineflag.h
+@@ -66,8 +66,8 @@
+ // They do not use a virtual destructor to simplify their implementation.
+ // They are not destroyed except at program exit, so leaks do not matter.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+ #endif
+ class CommandLineFlag {
+  public:
+@@ -211,7 +211,7 @@
+   virtual absl::string_view TypeName() const;
+ };
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+ ABSL_NAMESPACE_END
+--- a/inst/include/absl/flags/internal/flag.h
++++ b/inst/include/absl/flags/internal/flag.h
+@@ -577,8 +577,8 @@
+ // They do not use a virtual destructor to simplify their implementation.
+ // They are not destroyed except at program exit, so leaks do not matter.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+ #endif
+ class FlagImpl final : public CommandLineFlag {
+  public:
+@@ -785,7 +785,7 @@
+   alignas(absl::Mutex) mutable unsigned char data_guard_[sizeof(absl::Mutex)];
+ };
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+--- a/inst/include/absl/flags/reflection.cc
++++ b/inst/include/absl/flags/reflection.cc
+@@ -225,8 +225,8 @@
+ // They do not use a virtual destructor to simplify their implementation.
+ // They are not destroyed except at program exit, so leaks do not matter.
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+ #endif
+ class RetiredFlagObj final : public CommandLineFlag {
+  public:
+@@ -288,7 +288,7 @@
+   const FlagFastTypeId type_id_;
+ };
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+ }  // namespace
+--- a/inst/include/absl/random/internal/randen_detect.cc
++++ b/inst/include/absl/random/internal/randen_detect.cc
+@@ -133,8 +133,8 @@
+ // The default return at the end of the function might be unreachable depending
+ // on the configuration. Ignore that warning.
+ #if defined(__clang__)
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wunreachable-code-return"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wunreachable-code-return"
+ #endif
+ 
+ // CPUSupportsRandenHwAes returns whether the CPU is a microarchitecture
+@@ -272,7 +272,7 @@
+ }
+ 
+ #if defined(__clang__)
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ 
+ }  // namespace random_internal
+--- a/inst/include/absl/random/internal/randen_hwaes.cc
++++ b/inst/include/absl/random/internal/randen_hwaes.cc
+@@ -258,8 +258,8 @@
+ #endif
+ 
+ #ifdef __clang__
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wunknown-pragmas"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wunknown-pragmas"
+ #endif
+ 
+ // At this point, all of the platform-specific features have been defined /
+@@ -516,7 +516,7 @@
+ }
+ 
+ #ifdef __clang__
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ 
+ }  // namespace random_internal
+--- a/inst/include/absl/container/internal/raw_hash_set_test.cc
++++ b/inst/include/absl/container/internal/raw_hash_set_test.cc
+@@ -622,12 +622,12 @@
+   int64_t operator*() const {
+     // Suppress erroneous uninitialized memory errors on GCC.
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+     return vals_[0];
+ #if !defined(__clang__) && defined(__GNUC__)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+   }
+   explicit operator int() const { return **this; }
+@@ -957,14 +957,14 @@
+ // Ignore unreachable-code warning. Compiler thinks one branch of each ternary
+ // conditional is unreachable.
+ #if defined(__clang__)
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wunreachable-code"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wunreachable-code"
+ #endif
+   constexpr size_t mock_size = sizeof(MockTable);
+   constexpr size_t generation_size =
+       SwisstableGenerationsEnabled() ? sizeof(GenerationData) : 0;
+ #if defined(__clang__)
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ 
+   EXPECT_EQ(
+--- a/inst/include/absl/random/internal/explicit_seed_seq_test.cc
++++ b/inst/include/absl/random/internal/explicit_seed_seq_test.cc
+@@ -171,12 +171,12 @@
+     // Apply the assignment-operator.
+     // GCC 12 has a false-positive -Wstringop-overflow warning here.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wstringop-overflow"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wstringop-overflow"
+ #endif
+     another_seq = seq_from_entropy;
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+ 
+     // Re-generate seeds.
+--- a/inst/include/absl/strings/internal/str_format/bind_test.cc
++++ b/inst/include/absl/strings/internal/str_format/bind_test.cc
+@@ -46,8 +46,8 @@
+   const int ia[] = { 10, 20, 30, 40};
+   const FormatArgImpl args[] = {FormatArgImpl(ia[0]), FormatArgImpl(ia[1]),
+                                 FormatArgImpl(ia[2]), FormatArgImpl(ia[3])};
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+   const Expectation kExpect[] = {
+     {__LINE__, "d",          2, &args[0], no, no, 2},
+     {__LINE__, "4d",         2, &args[0],  4, no, 2},
+@@ -78,7 +78,7 @@
+     {__LINE__, "1$*6$d",     1},  // width position out of bounds
+     {__LINE__, "1$.*6$d",    1},  // precision position out of bounds
+   };
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+   for (const Expectation &e : kExpect) {
+     SCOPED_TRACE(e.line);
+     SCOPED_TRACE(e.fmt);
+--- a/inst/include/absl/strings/internal/utf8_test.cc
++++ b/inst/include/absl/strings/internal/utf8_test.cc
+@@ -39,8 +39,8 @@
+ 
+ #if !defined(__cpp_char8_t)
+ #if defined(__clang__)
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wc++2a-compat"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wc++2a-compat"
+ #endif
+ TEST(EncodeUTF8Char, BasicFunction) {
+   std::pair<char32_t, std::string> tests[] = {{0x0030, u8"\u0030"},
+@@ -74,7 +74,7 @@
+             absl::strings_internal::kMaxEncodedUTF8Size);
+ }
+ #if defined(__clang__)
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ #endif  // !defined(__cpp_char8_t)
+ 
+--- a/inst/include/absl/strings/str_split_test.cc
++++ b/inst/include/absl/strings/str_split_test.cc
+@@ -742,8 +742,8 @@
+ 
+ #if !defined(__cpp_char8_t)
+ #if defined(__clang__)
+-#pragma clang diagnostic push
+-#pragma clang diagnostic ignored "-Wc++2a-compat"
++// #pragma clang diagnostic push
++// #pragma clang diagnostic ignored "-Wc++2a-compat"
+ #endif
+ TEST(Split, UTF8) {
+   // Tests splitting utf8 strings and utf8 delimiters.
+@@ -772,7 +772,7 @@
+   }
+ }
+ #if defined(__clang__)
+-#pragma clang diagnostic pop
++// #pragma clang diagnostic pop
+ #endif
+ #endif  // !defined(__cpp_char8_t)
+ 
+--- a/inst/include/absl/container/internal/test_allocator.h
++++ b/inst/include/absl/container/internal/test_allocator.h
+@@ -86,12 +86,12 @@
+     Allocator allocator;
+     // Ignore GCC warning bug.
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuse-after-free"
++// #pragma GCC diagnostic push
++// #pragma GCC diagnostic ignored "-Wuse-after-free"
+ #endif
+     AllocatorTraits::destroy(allocator, p);
+ #if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
+-#pragma GCC diagnostic pop
++// #pragma GCC diagnostic pop
+ #endif
+     if (instance_count_ != nullptr) {
+       *instance_count_ -= 1;
