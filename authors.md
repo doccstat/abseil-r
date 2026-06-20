@@ -14,12 +14,12 @@ Source:
 [`inst/CITATION`](https://github.com/doccstat/abseil-r/blob/main/inst/CITATION)
 
 Li X, Abseil Team (2023). *abseil: C++ Header Files from Abseil*. R
-package version 2023.8.2.2, <https://github.com/doccstat/abseil-r>.
+package version 2026.5.26.0, <https://github.com/doccstat/abseil-r>.
 
     @Manual{,
       title = {abseil: C++ Header Files from Abseil},
       author = {Xingchi Li and {Abseil Team}},
       year = {2023},
-      note = {R package version 2023.8.2.2},
+      note = {R package version 2026.5.26.0},
       url = {https://github.com/doccstat/abseil-r},
     }

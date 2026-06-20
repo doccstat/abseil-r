@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">abseil</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2023.8.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.5.26.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,46 @@
       <small>Source: <a href="https://github.com/doccstat/abseil-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.5.26.0" id="abseil-20265260">abseil 2026.5.26.0<a class="anchor" aria-label="anchor" href="#abseil-20265260"></a></h2>
+<ul><li><p>Upgrade to Abseil LTS version 20260526.0.</p></li>
+<li><p>abseil-cpp changes: <a href="https://github.com/abseil/abseil-cpp/releases/tag/20260526.0" class="external-link uri">https://github.com/abseil/abseil-cpp/releases/tag/20260526.0</a></p></li>
+<li><p>Production source file count increases from 153 to 162 after filtering.</p></li>
+<li><p>Extended compile filter to also exclude <code>*matchers*.cc</code> (pulls in gmock) and <code>*_win.cc</code> on non-Windows platforms (requires <code>&lt;windows.h&gt;</code>).</p></li>
+<li>
+<p>Patched pragma(s) suppressing important diagnostics:</p>
+<ul><li><code>inst/include/absl/container/inlined_vector.h</code></li>
+<li><code>inst/include/absl/container/internal/inlined_vector.h</code></li>
+<li><code>inst/include/absl/hash/internal/hash.h</code></li>
+<li><code>inst/include/absl/meta/internal/constexpr_testing.h</code></li>
+<li><code>inst/include/absl/strings/internal/charconv_bigint.h</code></li>
+</ul></li>
+<li>
+<p>Patched non-portable pragma(s):</p>
+<ul><li><code>inst/include/absl/base/casts.h</code></li>
+<li><code>inst/include/absl/container/inlined_vector.h</code></li>
+<li><code>inst/include/absl/container/internal/inlined_vector.h</code></li>
+<li><code>inst/include/absl/functional/internal/any_invocable.h</code></li>
+<li><code>inst/include/absl/strings/internal/cord_internal.h</code></li>
+<li><code>inst/include/absl/strings/internal/cord_rep_flat.h</code></li>
+<li><code>inst/include/absl/types/any_span.h</code></li>
+</ul></li>
+<li>
+<p>Patched pragma(s) suppressing diagnostics:</p>
+<ul><li><code>inst/include/absl/container/internal/hash_policy_traits.h</code></li>
+<li><code>inst/include/absl/container/internal/raw_hash_set_test.cc</code></li>
+<li><code>inst/include/absl/container/internal/test_allocator.h</code></li>
+<li><code>inst/include/absl/flags/commandlineflag.h</code></li>
+<li><code>inst/include/absl/flags/internal/flag.h</code></li>
+<li><code>inst/include/absl/flags/reflection.cc</code></li>
+<li><code>inst/include/absl/random/internal/explicit_seed_seq_test.cc</code></li>
+<li><code>inst/include/absl/random/internal/randen_detect.cc</code></li>
+<li><code>inst/include/absl/random/internal/randen_hwaes.cc</code></li>
+<li><code>inst/include/absl/strings/internal/str_format/bind_test.cc</code></li>
+<li><code>inst/include/absl/strings/internal/utf8_test.cc</code></li>
+<li><code>inst/include/absl/strings/str_split_test.cc</code></li>
+</ul></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2023.8.2.2" id="abseil-2023822">abseil 2023.8.2.2<a class="anchor" aria-label="anchor" href="#abseil-2023822"></a></h2>
 <ul><li>Package is now compiled (<code>NeedsCompilation: yes</code>).</li>
