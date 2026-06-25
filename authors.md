@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/doccstat/abseil-r/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/doccstat/abseil-r/blob/v2026.5.26.0/inst/CITATION)
 
 Li X, Abseil Team (2023). *abseil: C++ Header Files from Abseil*. R
 package version 2026.5.26.0, <https://github.com/doccstat/abseil-r>.

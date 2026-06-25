@@ -2,6 +2,8 @@
 
 ## abseil 2026.5.26.0
 
+CRAN release: 2026-06-21
+
 - Upgrade to Abseil LTS version 20260526.0.
 
 - abseil-cpp changes:
